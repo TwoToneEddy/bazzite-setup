@@ -80,7 +80,15 @@ install_tree() {
 }
 
 # refresh_desktop_caches - make Plasma notice new .desktop files and icons.
+#
+# kbuildsycoca6 --noincremental takes several seconds, and five components call
+# this, so install-all.sh sets GAMINGCONFIG_DEFER_CACHES=1 and runs it once at the
+# end instead. On its own, a single component still refreshes immediately.
 refresh_desktop_caches() {
+    if [ "${GAMINGCONFIG_DEFER_CACHES:-0}" = 1 ]; then
+        skip "cache refresh deferred to the end of install-all.sh"
+        return 0
+    fi
     have gtk-update-icon-cache && \
         run gtk-update-icon-cache -q -f -t "$HOME/.local/share/icons/hicolor" 2>/dev/null
     have update-desktop-database && \

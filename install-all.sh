@@ -32,10 +32,21 @@ if [ "${DRY_RUN:-0}" != 1 ]; then
     done
 fi
 
+# Five components would each run kbuildsycoca6 --noincremental, which takes several
+# seconds a go. Defer it and do it once at the end.
+export GAMINGCONFIG_DEFER_CACHES=1
+
 for c in "${want[@]}"; do
     [ -x "$c/install.sh" ] || { echo "skipping $c (no installer)"; continue; }
     printf '\n\033[1m=== %s ===\033[0m\n' "$c"
     ( cd "$c" && ./install.sh )
 done
+
+printf '\n\033[1m=== desktop and icon caches ===\033[0m\n'
+if [ "${DRY_RUN:-0}" = 1 ]; then
+    echo "  would  refresh the desktop and icon caches once"
+else
+    GAMINGCONFIG_DEFER_CACHES=0 bash -c '. common/lib.sh; refresh_desktop_caches'
+fi
 
 printf '\n\033[32mdone\033[0m — check it with reference/health-check.sh\n'

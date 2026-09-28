@@ -148,8 +148,8 @@ note "recorded profile '$UV_PROFILE': $UV_TARGET (max_core_clock $UV_MAX_CORE_CL
 note "stock curve on the recorded card: $STOCK_CURVE"
 if [ "${live_id:-}" = "$GPU_PCI_ID" ]; then
     note "same GPU model - but an undervolt is silicon-specific, not model-specific:"
-    fix "install 08 for the tool and the profile, then VALIDATE before relying on it"
-    fix "  watch for faults: journalctl -k | grep 'NVRM: Xid'"
+    note "  install 08 for the tool and the profile, then VALIDATE before relying on it"
+    note "  watch for faults: journalctl -k | grep 'NVRM: Xid'"
 else
     diff_ "different GPU - do not adopt this V/F curve"
     fix "install 08 for LACT itself, then build a curve for the new card"
