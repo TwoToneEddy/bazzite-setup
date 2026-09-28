@@ -1073,7 +1073,9 @@ back; the rest is noted.
    taskbar section) and run `gtk-update-icon-cache -f -t ~/.local/share/icons/hicolor`.
 7. **Service cache and shell** — `kbuildsycoca6 --noincremental` then
    `systemctl --user restart plasma-plasmashell.service`.
-8. **Steam** — set GE-Proton11-6 on Hunt (Properties → Compatibility), then fully
+8. **Steam** — install GE-Proton11-6 into
+   `~/.local/share/Steam/compatibilitytools.d` (commands in `03-dlss-presets/README.md`;
+   nothing else installs it), set it on Hunt (Properties → Compatibility), then fully
    quit and restart Steam so `95-gaming.conf` reaches it.
 9. **Trims** — `sudo systemctl disable NetworkManager-wait-online.service displaylink.service`.
 10. **Log out and back in** so `environment.d` and the virtual-keyboard setting

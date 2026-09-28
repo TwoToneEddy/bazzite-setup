@@ -67,6 +67,28 @@ Set the Proton version per game in Steam → Properties → Compatibility. The
 trade-off: GE builds do not share Valve's precompiled shader caches, so first
 launches take longer.
 
+**GE-Proton is not installed by anything here**, and Steam does not ship it, so on
+a fresh machine it is simply missing from the Compatibility dropdown. Install it
+into your home directory (no layering, no reboot):
+
+```bash
+mkdir -p ~/.local/share/Steam/compatibilitytools.d
+cd ~/.local/share/Steam/compatibilitytools.d
+B=https://github.com/GloriousEggroll/proton-ge-custom/releases/download/GE-Proton11-6
+curl -fLO $B/GE-Proton11-6-x86_64.tar.gz
+curl -fLO $B/GE-Proton11-6-x86_64.sha512sum
+sha512sum -c GE-Proton11-6-x86_64.sha512sum && tar -xzf GE-Proton11-6-x86_64.tar.gz
+rm GE-Proton11-6-x86_64.*
+```
+
+Then fully quit and restart Steam. Release assets carry an `-x86_64` suffix from
+11-4 onwards; the unsuffixed URL 404s. ProtonUp-Qt
+(`flatpak install flathub net.davidotek.pupgui2`) does the same from a GUI.
+
+A game left on Proton Experimental runs on **XWayland**, so it gets no HDR, and
+a game that resizes its own window can end up offset: Onimusha showed up as
+`3839x2160+960+540` on the TV, a 1080p window centred and then grown to 4K.
+
 **Bare `dlss overlay` TOGGLES.** The read-only one is `dlss overlay status`. That
 has caught me out.
 

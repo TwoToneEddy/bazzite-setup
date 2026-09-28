@@ -1,6 +1,6 @@
 [General]
-count=1
-rules=hunt-focus
+count=2
+rules=hunt-focus,onimusha-fullscreen
 
 [hunt-focus]
 Description=Hunt Showdown - keep focus on launch
@@ -16,3 +16,18 @@ fsplevelrule=2
 # what drops you to the desktop while the game is still starting up.
 fpplevel=4
 fpplevelrule=2
+
+[onimusha-fullscreen]
+Description=Onimusha Way of the Sword - force fullscreen
+# The game has no fullscreen option. On the TV (4K at 2.2x scale, 1746x982
+# logical) it opens a decorated 1745x1010 window that overflows the screen and
+# KWin shoves it off-centre. Class is onimushawots.exe on native Wayland
+# (GE-Proton), steam_app_2638890 on XWayland.
+wmclass=(?i).*(onimushawots|steam_app_2638890).*
+wmclassmatch=3
+wmclasscomplete=false
+types=1
+fullscreen=true
+fullscreenrule=2
+noborder=true
+noborderrule=2
