@@ -1124,7 +1124,7 @@ commit:
 It is already a git repository, with a remote:
 
 ```bash
-cd ~/bazzite-setup && git push -u origin main    # git@github.com:TwoToneEddy/bazzite-setup.git
+cd ~/bazzite-setup && git push -u origin master  # git@github.com:TwoToneEddy/bazzite-setup.git
 ```
 
 **A flat collector script also exists** at `~/.local/bin/gaming-config-snapshot`.

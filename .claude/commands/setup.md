@@ -29,7 +29,7 @@ Run both, and show the user the output:
 when the hardware matches the recorded profile; anything it does print is a value
 some component hardcodes, and it names the file to edit.
 
-Then tell them, in a short list: what this repo covers (the twelve components, one
+Then tell them, in a short list: what this repo covers (the thirteen components, one
 line each — take the descriptions from `README.md`, do not invent them), which are
 already `ok`, and which need work. If `preflight.sh` reported differences, say that
 adaptation comes before installation.

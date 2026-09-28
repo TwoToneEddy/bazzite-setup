@@ -144,6 +144,21 @@ check() {
             else detail="layer built, repo on $(git -C "$HOME/nvtruehdr" branch --show-current 2>/dev/null)"; fi ;;
         11-game-window-fixes)
             detail="rules installed" ;;
+        12-shell-environment)
+            if ! grep -q 'bashrc.d' "$HOME/.bashrc" 2>/dev/null; then
+                state=partial; detail="~/.bashrc does not source ~/.bashrc.d/"
+            else
+                # Count alias targets that are not on this machine. Missing ones are
+                # not a failure - the aliases were wanted verbatim - but they are
+                # worth surfacing, so report them without downgrading the state.
+                local gone=0
+                for c in gedit platformio; do command -v "$c" >/dev/null 2>&1 || gone=$((gone+1)); done
+                for f in /opt/reboot-into-windows /opt/Ultimaker-Cura-5.1.1-linux.AppImage; do
+                    [ -e "$f" ] || gone=$((gone+1))
+                done
+                detail="aliases and git prompt installed"
+                [ "$gone" -gt 0 ] && detail="$detail ($gone alias target(s) absent here)"
+            fi ;;
     esac
     report "$dir" "$state" "$detail"
 }

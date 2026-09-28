@@ -345,7 +345,7 @@ That is the behaviour to expect, not a bug to chase.
 | `05-display-switching` | connector names and monitor modes |
 | `07-fan-control` | the board's sensor chip and channel names |
 | `02-mangohud-overlay` | the GPU's PCI address and LACT id |
-| `03`, `04`, `06`, `09`, `10`, `11` | nothing — these port as-is |
+| `03`, `04`, `06`, `09`, `10`, `11`, `12` | nothing — these port as-is |
 
 ## Reporting back
 
