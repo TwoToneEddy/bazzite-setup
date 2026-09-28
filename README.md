@@ -1,4 +1,4 @@
-# gamingConfig
+# bazzite-setup
 
 Every hand-built piece of this machine's gaming setup, split one directory per
 thing, each carrying the files it needs and the documentation to rebuild and tune
@@ -46,19 +46,36 @@ outputs by name. Those are the places to look first on different hardware.
 | [`AGENTS.md`](AGENTS.md) | the porting procedure and the rules. `CLAUDE.md` is a symlink to it |
 | [`machine-profile.conf`](machine-profile.conf) | every hardware-specific value in one place: PCI addresses, LACT ids, connector names, fan channels, the sensor chip |
 | [`preflight.sh`](preflight.sh) | compares this machine against that profile and names the file to edit for each difference. Read-only |
+| [`status.sh`](status.sh) | per component: installed? running? Read-only. `--porcelain` for one line each, or pass `NN` for one component |
+| `.claude/commands/` | `/setup` walks the components one at a time; `/status` reports where you are. They ship with the clone |
 | `common/lib.sh` | shared by every installer |
 | `reference/` | full notes, the original brief, the layered-package list, `health-check.sh` |
 
 ## Moving to a new machine
 
 ```bash
-git clone <this repo> ~/gamingConfig
-cd ~/gamingConfig
+git clone git@github.com:TwoToneEddy/bazzite-setup.git ~/bazzite-setup
+cd ~/bazzite-setup
 ./preflight.sh                  # what differs, and which file hardcodes it
 #   ... edit the files it names, inside NN-*/files/ ...
 ./install-all.sh
+./status.sh                     # where am I up to, component by component
 ./reference/health-check.sh     # confirm things are RUNNING, not just installed
 ```
+
+**Or let an agent walk you through it.** `CLAUDE.md` and the `/setup` command are
+in the repo, so they arrive with the clone:
+
+```bash
+cd ~/bazzite-setup && claude
+/setup            # one component at a time, confirming before each
+/status           # just tell me where I am
+```
+
+`/setup` reads `AGENTS.md` first, runs the preflight, shows you the component list
+with its current state, then goes one at a time: explain, adapt, dry run, install,
+verify, hand back anything a script cannot do. It will not activate the undervolt,
+edit the Plasma panel config live, or reboot.
 
 Only five values genuinely move between machines — the GPU's PCI address, its LACT
 id, the monitor connectors, the fan channel names and the board's sensor module.
@@ -76,7 +93,7 @@ Order matters only for `00-prerequisites`, which must go first, and
 independent — install just the pieces you want.
 
 ```bash
-cd gamingConfig
+cd bazzite-setup
 ./install-all.sh                  # everything, in order
 ./install-all.sh 02 05            # or just the components you name
 DRY_RUN=1 ./install-all.sh        # print what would happen, touch nothing
@@ -86,7 +103,7 @@ cd 02-mangohud-overlay && ./install.sh    # or one on its own
 Each installer is **idempotent** — it says `unchanged` for anything already in
 place and only writes what differs. Nothing deletes a file it did not install.
 Where a component has to replace something pre-existing that matters, it keeps a
-one-time `.bak-gamingConfig` copy first.
+one-time `.bak-bazzite-setup` copy first.
 
 Every installer needs `sudo` only if it has a `files/system` tree; the table
 above and each README say so.
@@ -117,7 +134,7 @@ These files are copies, not symlinks, so a change made live (editing
 if you want a second opinion on what has drifted; to see what has:
 
 ```bash
-cd gamingConfig
+cd bazzite-setup
 for f in $(find */files/home -type f); do
     live="$HOME/${f#*/files/home/}"
     cmp -s "$f" "$live" || echo "differs: $live"

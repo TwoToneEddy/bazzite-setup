@@ -15,7 +15,7 @@ if [ -r /etc/lact/config.yaml ]; then
         grep -q '^profiles:' /etc/lact/config.yaml 2>/dev/null \
             && warn "the live config has profiles of its own and they differ from these." \
             || warn "the live config has no profiles - probably a fresh deployment's stub."
-        echo "        A backup is kept at /etc/lact/config.yaml.bak-gamingConfig"
+        echo "        A backup is kept at /etc/lact/config.yaml.bak-bazzite-setup"
     fi
 fi
 

@@ -5,7 +5,7 @@ set -euo pipefail
 
 if [ -r "$HOME/.config/kwinrulesrc" ] && ! cmp -s files/home/.config/kwinrulesrc "$HOME/.config/kwinrulesrc"; then
     warn "you have window rules that differ from these. This replaces the whole file;"
-    warn "a copy is kept at ~/.config/kwinrulesrc.bak-gamingConfig"
+    warn "a copy is kept at ~/.config/kwinrulesrc.bak-bazzite-setup"
 fi
 
 say "window rules"

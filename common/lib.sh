@@ -1,4 +1,4 @@
-# lib.sh - shared helpers for the gamingConfig component installers.
+# lib.sh - shared helpers for the bazzite-setup component installers.
 #
 # Every component is a directory with a files/ tree and an install.sh. The
 # files/ tree mirrors the real filesystem in two halves:
@@ -11,7 +11,7 @@
 #
 # Nothing here removes or moves a file it did not put there. Where a component
 # needs to replace something that already exists and matters - a LACT profile,
-# a CoolerControl database, the Plasma panel config - it takes a .bak-gamingConfig
+# a CoolerControl database, the Plasma panel config - it takes a .bak-bazzite-setup
 # copy first, and says so.
 set -u
 
@@ -35,18 +35,18 @@ run() {
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
-# back_up <path> - keep one .bak-gamingConfig copy of a file before replacing it.
+# back_up <path> - keep one .bak-bazzite-setup copy of a file before replacing it.
 # Only the first run makes a backup; later runs leave the original backup alone,
 # so re-running an installer can never overwrite the copy of the pristine file.
 back_up() {
     local f="$1" sudo_=""
     [ -e "$f" ] || return 0
     [ -w "$(dirname "$f")" ] || sudo_="sudo"
-    if $sudo_ test -e "$f.bak-gamingConfig" 2>/dev/null; then
-        skip "backup exists  $f.bak-gamingConfig"
+    if $sudo_ test -e "$f.bak-bazzite-setup" 2>/dev/null; then
+        skip "backup exists  $f.bak-bazzite-setup"
         return 0
     fi
-    run $sudo_ cp -a "$f" "$f.bak-gamingConfig" || return 1
+    run $sudo_ cp -a "$f" "$f.bak-bazzite-setup" || return 1
     [ "${DRY_RUN:-0}" = 1 ] || ok "backed up      $f"
 }
 
@@ -82,10 +82,10 @@ install_tree() {
 # refresh_desktop_caches - make Plasma notice new .desktop files and icons.
 #
 # kbuildsycoca6 --noincremental takes several seconds, and five components call
-# this, so install-all.sh sets GAMINGCONFIG_DEFER_CACHES=1 and runs it once at the
+# this, so install-all.sh sets BAZZITE_SETUP_DEFER_CACHES=1 and runs it once at the
 # end instead. On its own, a single component still refreshes immediately.
 refresh_desktop_caches() {
-    if [ "${GAMINGCONFIG_DEFER_CACHES:-0}" = 1 ]; then
+    if [ "${BAZZITE_SETUP_DEFER_CACHES:-0}" = 1 ]; then
         skip "cache refresh deferred to the end of install-all.sh"
         return 0
     fi

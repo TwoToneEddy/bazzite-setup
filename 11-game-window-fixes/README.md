@@ -33,7 +33,7 @@ window-info        # opens KWin's debug console; click the window
 `window-info` is installed by `05-display-switching`.
 
 **`kwinrulesrc` is the whole rules file, not just this rule.** Installing it
-replaces any rules you have added since. A `.bak-gamingConfig` copy is kept, and
+replaces any rules you have added since. A `.bak-bazzite-setup` copy is kept, and
 the GUI is System Settings → Window Management → Window Rules.
 
 **Rules apply to new windows.** Restart the game, or ask KWin to re-read them,

@@ -108,7 +108,7 @@ having no HDR support at all.
 
 **Do not track `~/nvtruehdr` from here.** Commit it to
 <https://github.com/TwoToneEddy/nvtruehdr> instead. If you ever find loose copies
-of the source inside `gamingConfig`, that is the mistake this note exists to
+of the source inside `bazzite-setup`, that is the mistake this note exists to
 prevent — delete them and clone.
 
 **The repo builds a 32-bit and a 64-bit layer.** A game that runs as 32-bit picks

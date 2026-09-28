@@ -16,6 +16,11 @@ anything:
   must all hold, and most of the advice circulating online does not apply to this
   configuration.
 
+If the user would rather be walked through it, the `/setup` command in
+`.claude/commands/` is this procedure as a wizard: one component at a time, with a
+status check and a confirmation between each. `/status` just reports where the
+machine is up to.
+
 Read this as the operating procedure, and each component's `README.md` as the
 reference for that component. `reference/GAMING_SETUP_NOTES.md` is the long-form
 history — why each decision was made, what was measured, what was tried and
@@ -141,8 +146,14 @@ interruption: layer them, reboot, then continue from `01`.
 ### 4. Verify
 
 ```bash
-./reference/health-check.sh
+./status.sh                     # per component: installed, and running?
+./reference/health-check.sh     # the machine as a whole, in more detail
 ```
+
+`status.sh` is the one to use while working through components — it reports each as
+`ok`, `partial` (installed but something is not running) or `absent` (not installed,
+which is a correct answer for one deliberately skipped). `--porcelain` gives one
+line per component if you are driving it from a script.
 
 This is the gate. It checks that things are **running**, not merely installed —
 services active, `/dev/shm` feed files being written, the overlay's GPU actually

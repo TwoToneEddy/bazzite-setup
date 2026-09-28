@@ -1,6 +1,6 @@
 # 00 — Prerequisites
 
-Two kernel modules and four layered packages. Nothing else in `gamingConfig`
+Two kernel modules and four layered packages. Nothing else in `bazzite-setup`
 works without these, so this goes first.
 
 ## What it installs

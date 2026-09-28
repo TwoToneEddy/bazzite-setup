@@ -10,7 +10,7 @@ RTX 5090 ROG Astral OC (`1043:89e3`), SAPPHIRE NITRO+ B850M WIFI.
 to you: the undervolt values, a live TV Mode test, and whether to try the
 gamescope Game Mode session (installed, waiting on a reboot).
 
-If you are re-applying this on a fresh install, start at **`~/gamingConfig/`**
+If you are re-applying this on a fresh install, start at **`~/bazzite-setup/`**
 rather than here. That directory splits everything below into one folder per
 component — per-pin current sensing, the overlay, DLSS presets, the DLSS debug
 overlay toggle, display switching, fan control, the undervolt, the taskbar — each
@@ -1035,7 +1035,7 @@ The alarm tone and how many times it plays are at the top of
 | Frametime logging | `autostart_log=` in `MangoHud.conf` | `0` = off. **Shift+F2 logs on demand** to `~/mangohud-logs`. |
 | DLSS preset / version / overlay | `dlss` command, or the tray icon | `dlss sr M`, `dlss overlay on`, `dlss status`. Writes `~/.config/environment.d/95-gaming.conf`. **Restart Steam after any change.** |
 | DLSS DLL version | `PROTON_DLSS_UPGRADE=` in `95-gaming.conf` | `1` = newest, or pin e.g. `310.9.1.0`. Needs Proton GE/EM. |
-| HDR on/off | `PROTON_ENABLE_HDR` / `PROTON_ENABLE_WAYLAND` in `95-gaming.conf` | Both needed. Turning Wayland off should also cure the Hunt focus jump, at the cost of HDR. Full checklist for HDR that is not working, and why most of the advice online does not apply here: `~/gamingConfig/AGENTS.md`, "HDR policy". |
+| HDR on/off | `PROTON_ENABLE_HDR` / `PROTON_ENABLE_WAYLAND` in `95-gaming.conf` | Both needed. Turning Wayland off should also cure the Hunt focus jump, at the cost of HDR. Full checklist for HDR that is not working, and why most of the advice online does not apply here: `~/bazzite-setup/AGENTS.md`, "HDR policy". |
 | HDR per screen | `~/.config/kwinoutputconfig.json`, or System Settings → Display | Per output, not global. Currently **on for `DP-4` only** — the TV and the Dell both have `highDynamicRange: false`, so a game moved to either loses HDR with nothing said. |
 | Display layouts | `~/.local/bin/display-profile` | `display-profile gaming\|work\|tv\|dell\|status`. Refresh rates and outputs are near the top of the file. |
 | Login screen layout | `/var/lib/plasmalogin/.config/kwinoutputconfig.json` | Copy of your session's `setups` block. Delete it to get "all monitors on" back. |
@@ -1117,12 +1117,14 @@ every panel interaction, and Plasma rewrites it constantly — keep the
 `launchers=` line in a note instead), anything in `~/.cache`, and the Steam
 config.
 
-**Everything below is already split into `~/gamingConfig/`**, one directory per
+**Everything below is already split into `~/bazzite-setup/`**, one directory per
 component, with the files, an installer and a README each. That is the thing to
 commit:
 
+It is already a git repository, with a remote:
+
 ```bash
-cd ~/gamingConfig && git init && git add -A && git commit -m "gaming setup"
+cd ~/bazzite-setup && git push -u origin main    # git@github.com:TwoToneEddy/bazzite-setup.git
 ```
 
 **A flat collector script also exists** at `~/.local/bin/gaming-config-snapshot`.
