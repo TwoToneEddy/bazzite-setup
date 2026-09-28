@@ -35,7 +35,7 @@ check_target() {
     else
         missing=$((missing+1))
         warn "$(printf '%-8s -> %s is NOT installed' "$alias_name" "$cmd")"
-        [ -n "$note" ] && warn "             $note"
+        if [ -n "$note" ]; then warn "             $note"; fi
     fi
 }
 check_target gs   git

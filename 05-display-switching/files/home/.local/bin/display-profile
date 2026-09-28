@@ -165,6 +165,12 @@ apply() {
     # fullscreen windows only, which is what you want on an OLED - always-on can
     # make the panel flicker on a mostly-static desktop.
     [ "$primary" = "$AOC_OUT" ] && args+=("output.${primary}.vrrpolicy.automatic")
+    # The TV is the exception: "always". Games are often played windowed on it,
+    # and without VRR a window runs at a fixed 120Hz, so the 116 fps limiter
+    # repeats a frame four times a second - visible judder. The cost is the OLED
+    # flicker above, now possible outside fullscreen too; if it shows, change
+    # this back to automatic.
+    [ "$primary" = "$TV_OUT" ] && args+=("output.${primary}.vrrpolicy.always")
     if [ -n "$second" ]; then
         args+=("output.${second}.enable"
                "output.${second}.mode.${sid}"
