@@ -148,16 +148,16 @@ check() {
             if ! grep -q 'bashrc.d' "$HOME/.bashrc" 2>/dev/null; then
                 state=partial; detail="~/.bashrc does not source ~/.bashrc.d/"
             else
-                # Count alias targets that are not on this machine. Missing ones are
-                # not a failure - the aliases were wanted verbatim - but they are
-                # worth surfacing, so report them without downgrading the state.
-                local gone=0
-                for c in gedit platformio; do command -v "$c" >/dev/null 2>&1 || gone=$((gone+1)); done
-                for f in /opt/reboot-into-windows /opt/Ultimaker-Cura-5.1.1-linux.AppImage; do
-                    [ -e "$f" ] || gone=$((gone+1))
+                # Which GUI editor `g` resolves to on this machine, if any.
+                local editor=""
+                for e in kate kwrite gnome-text-editor gedit; do
+                    command -v "$e" >/dev/null 2>&1 && { editor="$e"; break; }
                 done
-                detail="aliases and git prompt installed"
-                [ "$gone" -gt 0 ] && detail="$detail ($gone alias target(s) absent here)"
+                if [ -n "$editor" ]; then
+                    detail="aliases and git prompt installed, g -> $editor"
+                else
+                    state=partial; detail="installed, but g has no GUI editor to open"
+                fi
             fi ;;
     esac
     report "$dir" "$state" "$detail"

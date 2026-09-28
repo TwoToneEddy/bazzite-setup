@@ -46,18 +46,37 @@ Two details worth keeping if you edit it:
 Grouped in the file: git, editors and remote machines, serial/3D-printing, system.
 
 ```
-gs  git status -s          com…com5  chmod 777 /dev/ttyACM0-5
-gk  gitk --all &           ports     list ttyACM devices
+gs  git status -s          g         open in a GUI editor (see below)
+gk  gitk --all &           pi        ssh pi@raspberrypi
 pull / push                cf        bridge octopi's USB serial over ssh
-commit  -m "Updates"       mm        platformio build
-add  git add *             g         gedit
-gr  git remote -v          pi        ssh pi@raspberrypi
-prune  fetch --prune       windows   reboot into Windows
-tag / tagl                 usbw      which USB devices can wake the machine
-                           reload    source ~/.bashrc
-                           b         ~/common/scripts/commit.sh
-                           cura      Ultimaker Cura
+commit  -m "Updates"       com…com5  chmod 777 /dev/ttyACM0-5
+add  git add *             ports     list ttyACM devices
+gr  git remote -v          usbw      which USB devices can wake the machine
+prune  fetch --prune       reload    source ~/.bashrc
+tag / tagl                 b         ~/common/scripts/commit.sh
 ```
+
+### `g` — a GUI editor
+
+`g` is a **function**, not an alias, for two reasons:
+
+- **It picks whichever editor the machine has**, trying `kate`, `kwrite`,
+  `gnome-text-editor`, `gedit`, then `$VISUAL`/`$EDITOR`. On this KDE system that
+  is **kate**. So the file survives moving between KDE, GNOME and a bare install
+  without editing.
+- **It detaches the editor from the terminal** (`setsid nohup … &`, both streams to
+  `/dev/null`). `g file` hands the prompt straight back instead of tying up the
+  shell until you close the window, and the editor survives closing the terminal.
+  Qt and GTK warnings go nowhere rather than littering the prompt.
+
+To pin it to one editor, change the list at the top of the function.
+
+### Dropped from the previous machine's set
+
+`mm` (platformio), `windows` (`/opt/reboot-into-windows`) and `cura` (an AppImage
+in `/opt`) are **not installed** — an alias that only fails at the moment you use
+it is worse than no alias. They are listed in a comment at the end of the file with
+the local equivalent for each, so nothing is lost if you want one back.
 
 ## Traps
 
@@ -95,18 +114,9 @@ sudo usermod -aG dialout $USER      # then log out and back in
 ls -l /dev/ttyACM0                  # confirm which group owns it
 ```
 
-**Four targets do not exist on this machine** — checked, not assumed:
-
-| Alias | Problem | Here |
-|---|---|---|
-| `g` → `gedit` | GNOME editor, not installed on KDE | `kate`, or `flatpak install org.gnome.gedit` |
-| `mm` → `platformio` | not installed | `pip install --user platformio`, or a toolbox container |
-| `windows` → `/opt/reboot-into-windows` | script from the old machine | `systemctl reboot --boot-loader-entry=…`, snippet in the file |
-| `cura` → an AppImage in `/opt` | that path and the Ubuntu `libstdc++` path are both Debian-specific | `flatpak install flathub com.ultimaker.cura` |
-
-`gk`, `b`, `gs`, `gr`, `cf`, `pi` and the rest all work here. `gitk` resolves to a
-distrobox shim in `~/.local/bin`, which is why it works on an immutable system at
-all.
+**Every remaining alias target was checked on this machine**, and `install.sh`
+re-checks them wherever you install it. `gitk` resolves to a distrobox shim in
+`~/.local/bin`, which is why `gk` works on an immutable system at all.
 
 **On an immutable system, reach for `flatpak` or a toolbox before `rpm-ostree`**
 when filling any of these gaps. See the Bazzite policy in `../AGENTS.md`.

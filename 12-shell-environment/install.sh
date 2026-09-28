@@ -40,20 +40,28 @@ check_target() {
 }
 check_target gs   git
 check_target gk   gitk
-check_target g    gedit      "this is a KDE system; kate is the local equivalent"
 check_target cf   socat
-check_target mm   platformio "pip install --user platformio, or run it in a toolbox"
 check_target pi   ssh
 
-for f in /opt/reboot-into-windows "$HOME/common/scripts/commit.sh" \
-         /opt/Ultimaker-Cura-5.1.1-linux.AppImage; do
-    if [ -e "$f" ]; then
-        ok "$(printf '%-8s -> %s' "$(basename "$f")" present)"
-    else
-        missing=$((missing+1))
-        warn "$(printf '%-40s NOT present' "$f")"
-    fi
+# g is a resolver, not a fixed alias: report which editor it will actually pick.
+editor=""
+for e in kate kwrite gnome-text-editor gedit; do
+    if command -v "$e" >/dev/null 2>&1; then editor="$e"; break; fi
 done
+if [ -n "$editor" ]; then
+    ok "$(printf '%-8s -> %s' g "$editor")"
+else
+    missing=$((missing+1))
+    warn "g        -> no GUI editor found (kate, kwrite, gnome-text-editor, gedit)"
+    warn "             sudo rpm-ostree install kate, or flatpak a text editor"
+fi
+
+if [ -e "$HOME/common/scripts/commit.sh" ]; then
+    ok "$(printf '%-8s -> %s' b "~/common/scripts/commit.sh")"
+else
+    missing=$((missing+1))
+    warn "b        -> ~/common/scripts/commit.sh is NOT present"
+fi
 
 say "branch names"
 # pull and push name master explicitly. Say which way round this machine is, rather

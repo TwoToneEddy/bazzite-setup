@@ -85,10 +85,31 @@ alias tagl='git describe --tags $(git rev-list --tags --max-count=100)'
 # ---------------------------------------------------------------------------
 # Editors and remote machines
 # ---------------------------------------------------------------------------
-# gedit is a GNOME application and is not installed on this KDE system. Kept as
-# asked; `kate` is the equivalent here, and `flatpak install org.gnome.gedit`
-# would give you the real thing.
-alias g='gedit'
+# g - open something in a GUI editor.
+#
+# A function rather than an alias, for two reasons. It picks whichever editor the
+# machine actually has, so this file survives moving between KDE, GNOME and a bare
+# install; and it detaches the editor from the terminal, so `g file` hands the
+# prompt straight back instead of tying up the shell until you close the window.
+#
+# On this KDE system that resolves to kate. Order is deliberate: kate first, then
+# its lighter sibling kwrite, then the GNOME editors under both their old and new
+# names, then $VISUAL/$EDITOR if one is set to something graphical.
+g() {
+    local ed
+    for ed in kate kwrite gnome-text-editor gedit "${VISUAL:-}" "${EDITOR:-}"; do
+        [ -n "$ed" ] || continue
+        if command -v "$ed" >/dev/null 2>&1; then
+            # setsid + nohup so the editor survives the shell closing, and both
+            # streams go nowhere so its Qt/GTK chatter does not litter the prompt.
+            setsid nohup "$ed" "$@" >/dev/null 2>&1 &
+            return 0
+        fi
+    done
+    echo "g: no GUI editor found (tried kate, kwrite, gnome-text-editor, gedit)" >&2
+    return 1
+}
+
 alias pi='ssh pi@raspberrypi'
 
 # ---------------------------------------------------------------------------
@@ -100,10 +121,6 @@ alias pi='ssh pi@raspberrypi'
 # because that is what was asked for. The intended version:
 #   alias cf="sudo socat PTY,link=$HOME/dev/ttyACM0,raw,echo=0 EXEC:'ssh pi@octopi.local socat - /dev/ttyUSB0'"
 alias cf="sudo socat PTY,link=$H/dev/ttyACM0,raw,echo=0  EXEC:'ssh pi@octopi.local socat - /dev/ttyUSB0'"
-
-# platformio is not installed here. `pip install --user platformio`, or better on
-# an immutable system, run it from a toolbox container.
-alias mm='platformio run -e sanguino_atmega1284p'
 
 alias com='sudo chmod 777 /dev/ttyACM0'
 alias com1='sudo chmod 777 /dev/ttyACM1'
@@ -120,17 +137,18 @@ alias ports="ls /dev | grep ttyACM"
 # ---------------------------------------------------------------------------
 # System
 # ---------------------------------------------------------------------------
-# /opt/reboot-into-windows is a script from the previous machine and is not on
-# this one. The Fedora/Bazzite equivalent, which needs no script:
-#   systemctl reboot --boot-loader-entry=$(bootctl list --json=short \
-#     | python3 -c 'import json,sys;print([e["id"] for e in json.load(sys.stdin) if "Windows" in e.get("title","")][0])')
-alias windows='sudo /opt/reboot-into-windows'
-
 alias usbw='grep . /sys/bus/usb/devices/*/power/wakeup'
 alias reload='source ~/.bashrc'
 alias b='/home/lee/common/scripts/commit.sh'
 
-# Ultimaker Cura, from the previous machine: both the AppImage and that
-# libstdc++ path are Debian/Ubuntu-specific and neither exists here. On Bazzite:
-#   flatpak install flathub com.ultimaker.cura
-alias cura='LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libstdc++.so.6 /opt/Ultimaker-Cura-5.1.1-linux.AppImage'
+# Dropped from the previous machine's set, because their targets do not exist here
+# and an alias that only fails when you use it is worse than no alias:
+#
+#   mm       platformio run -e sanguino_atmega1284p
+#            platformio is not installed. On an immutable system run it from a
+#            toolbox container rather than layering it.
+#   windows  sudo /opt/reboot-into-windows
+#            that script was Debian-era. The equivalent here needs no script:
+#              systemctl reboot --boot-loader-entry=<id>     # bootctl list
+#   cura     an AppImage in /opt with an Ubuntu libstdc++ preload
+#              flatpak install flathub com.ultimaker.cura
