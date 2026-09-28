@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Sleep Displays
+Comment=Blank all displays (Pause/Break)
+Exec=/home/lee/.local/bin/displays-sleep
+Icon=system-suspend
+Terminal=false
+NoDisplay=false
+Categories=Settings;HardwareSettings;
+StartupNotify=false

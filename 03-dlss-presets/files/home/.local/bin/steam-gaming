@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+#
+# steam-gaming - start Steam with ~/.config/gaming-env.conf applied.
+#
+# Steam passes its own environment down to every game it launches, so putting
+# the MangoHud and DLSS switches here is what makes them apply everywhere
+# without per-game launch options. The Steam launcher (steam.desktop in
+# ~/.local/share/applications) runs this instead of bazzite-steam directly.
+#
+# Anything in the conf file wins over what is already in the environment;
+# that is deliberate, so `dlss` has the last word.
+set -u
+
+CONF="${HOME}/.config/environment.d/95-gaming.conf"
+
+if [ -f "$CONF" ]; then
+    set -a
+    # shellcheck disable=SC1090
+    . "$CONF"
+    set +a
+fi
+
+exec /usr/bin/bazzite-steam "$@"

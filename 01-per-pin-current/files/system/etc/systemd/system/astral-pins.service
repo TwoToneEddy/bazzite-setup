@@ -1,0 +1,29 @@
+[Unit]
+Description=Per-pin 12V-2x6 current monitor (ROG Astral RTX 5090)
+Documentation=file:///usr/local/src/astral-pins/astral-pins.c
+After=nvidia-persistenced.service
+
+[Service]
+Type=simple
+# One I2C block read per second (~4.5ms on the bus) instead of 24 byte reads.
+# Output goes to /dev/shm, not /run: Steam games run inside a pressure-vessel
+# container with its own /run and cannot see anything written there.
+ExecStart=/usr/local/bin/astral-pins --daemon --interval 1 --warn 9.0 \
+          --output /dev/shm/astral-pins \
+          --alarm-command /usr/local/bin/astral-pins-alarm \
+          --alarm-repeat 30
+Restart=on-failure
+RestartSec=5
+Nice=10
+IOSchedulingClass=idle
+# *** Do NOT add ProtectHome=yes here. ***
+# It also hides /run/user, which holds the D-Bus session socket and the
+# PipeWire/Pulse socket, so astral-pins-alarm's notification and sound both fail
+# while the alarm itself still logs "ALARM pin N" and marks the overlay - i.e.
+# it looks like it worked. That cost an evening once. Same for PrivateTmp.
+PrivateTmp=no
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+[Install]
+WantedBy=multi-user.target

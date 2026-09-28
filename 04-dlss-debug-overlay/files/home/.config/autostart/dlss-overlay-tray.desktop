@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=DLSS Overlay toggle
+Comment=Tray icon showing and toggling the DLSS debug overlay
+Exec=/home/lee/.local/bin/dlss-overlay-tray
+Icon=dlss-overlay-off
+Terminal=false
+X-GNOME-Autostart-enabled=true

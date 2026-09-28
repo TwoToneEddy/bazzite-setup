@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""dlss-overlay-tray - taskbar toggle for the DLSS debug overlay.
+
+Port of Toggle-DlssOverlay.ps1 from the Windows install, including its icons.
+
+Windows repoints its own shortcut at dlss-on.ico / dlss-off.ico so the icon
+always shows the current state. The same trick does not work on Plasma: the
+Icons-Only Task Manager caches a launcher's icon and only re-reads the .desktop
+file when plasmashell restarts, so a pinned launcher would sit there showing the
+wrong state until the next login. A StatusNotifierItem - what KDE calls a system
+tray icon - can change its icon the instant the state changes, so that is what
+this is.
+
+Left click toggles. Right click gives explicit on/off and the full DLSS status.
+The icon also follows changes made elsewhere, e.g. `dlss overlay on` in a
+terminal, because it watches the config file.
+
+The setting is read by NGX when a game creates its DLSS feature, so it has to be
+set before a game starts, and Steam has to be restarted to pick it up - it
+travels in Steam's environment, not in a registry the game re-reads.
+"""
+
+import os
+import subprocess
+import sys
+
+from PySide6.QtCore import QFileSystemWatcher, QTimer
+from PySide6.QtGui import QAction, QIcon
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+
+HOME = os.path.expanduser("~")
+DLSS = os.path.join(HOME, ".local/bin/dlss")
+CONF = os.path.join(HOME, ".config/environment.d/95-gaming.conf")
+ICONS = os.path.join(HOME, ".local/share/icons/hicolor")
+
+
+def icon_for(state):
+    """Load the converted Windows icon at every size Qt might ask for."""
+    ic = QIcon()
+    for size in (16, 22, 24, 32, 48, 64, 128, 256):
+        p = os.path.join(ICONS, f"{size}x{size}", "apps", f"dlss-overlay-{state}.png")
+        if os.path.exists(p):
+            ic.addFile(p)
+    return ic
+
+
+def read_state():
+    """on/off, straight from the file the `dlss` command owns.
+
+    Parsed here rather than shelling out to `dlss overlay status`, because this
+    runs on every file change and a subprocess per change is wasteful. Note that
+    bare `dlss overlay` TOGGLES - `status` is the read-only one.
+    """
+    try:
+        with open(CONF) as fh:
+            for line in fh:
+                if line.startswith("DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS="):
+                    return "off" if "DLSSIndicator=0" in line else "on"
+    except OSError:
+        pass
+    return "off"
+
+
+class Tray:
+    def __init__(self, app):
+        self.app = app
+        self.state = read_state()
+
+        self.tray = QSystemTrayIcon()
+        self.tray.activated.connect(self.on_activated)
+
+        menu = QMenu()
+        self.act_on = QAction("Turn overlay on")
+        self.act_on.triggered.connect(lambda: self.set_state("on"))
+        self.act_off = QAction("Turn overlay off")
+        self.act_off.triggered.connect(lambda: self.set_state("off"))
+        act_status = QAction("Show DLSS settings…")
+        act_status.triggered.connect(self.show_status)
+        act_quit = QAction("Quit")
+        act_quit.triggered.connect(app.quit)
+
+        menu.addAction(self.act_on)
+        menu.addAction(self.act_off)
+        menu.addSeparator()
+        menu.addAction(act_status)
+        menu.addSeparator()
+        menu.addAction(act_quit)
+        self.tray.setContextMenu(menu)
+
+        # Follow changes made from a terminal too. The file is replaced by
+        # rename rather than written in place, which drops the watch, so watch
+        # the directory as well and re-arm after every change.
+        self.watcher = QFileSystemWatcher()
+        self.arm_watch()
+        self.watcher.fileChanged.connect(self.on_file_changed)
+        self.watcher.directoryChanged.connect(self.on_file_changed)
+
+        self.refresh()
+        self.tray.show()
+
+    def arm_watch(self):
+        for p in (CONF, os.path.dirname(CONF)):
+            if os.path.exists(p) and p not in self.watcher.files() + self.watcher.directories():
+                self.watcher.addPath(p)
+
+    def on_file_changed(self, _path):
+        QTimer.singleShot(150, self.after_change)
+
+    def after_change(self):
+        self.arm_watch()
+        self.refresh()
+
+    def refresh(self):
+        self.state = read_state()
+        self.tray.setIcon(icon_for(self.state))
+        other = "off" if self.state == "on" else "on"
+        self.tray.setToolTip(
+            f"DLSS debug overlay is {self.state.upper()}\n"
+            f"Click to turn it {other}.\n"
+            "Restart Steam for it to reach a game."
+        )
+        self.act_on.setEnabled(self.state != "on")
+        self.act_off.setEnabled(self.state != "off")
+
+    def on_activated(self, reason):
+        if reason in (QSystemTrayIcon.ActivationReason.Trigger,
+                      QSystemTrayIcon.ActivationReason.MiddleClick):
+            self.set_state("off" if self.state == "on" else "on")
+
+    def set_state(self, want):
+        subprocess.run([DLSS, "overlay", want],
+                       stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        self.refresh()
+        if self.state == want:
+            self.tray.showMessage(
+                f"DLSS overlay {self.state.upper()}",
+                "Takes effect next time a game starts DLSS.\n"
+                "Fully quit Steam and start it again first.",
+                icon_for(self.state), 4000)
+        else:
+            self.tray.showMessage(
+                "Could not change the DLSS overlay",
+                f"Tried to set it {want} but it is still {self.state}.",
+                QSystemTrayIcon.MessageIcon.Critical, 6000)
+
+    def show_status(self):
+        for term in (["konsole", "--hold", "-e"], ["xdg-terminal-exec"]):
+            try:
+                subprocess.Popen(term + [DLSS, "status"])
+                return
+            except FileNotFoundError:
+                continue
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("DLSS Overlay")
+    app.setDesktopFileName("dlss-overlay-tray")
+    app.setQuitOnLastWindowClosed(False)
+
+    if not QSystemTrayIcon.isSystemTrayAvailable():
+        print("dlss-overlay-tray: no system tray on this session", file=sys.stderr)
+        return 1
+
+    Tray(app)
+    return app.exec()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

@@ -1,0 +1,263 @@
+#!/usr/bin/env bash
+#
+# dlss - set DLSS overrides for every Proton game, the way the NVIDIA App's
+# global DLSS Override page does on Windows.
+#
+#   dlss status                 Show what is set right now.
+#   dlss sr   <preset>          Super Resolution preset.
+#   dlss rr   <preset>          Ray Reconstruction preset.
+#   dlss mfg  <mode>            Frame Generation / Multi Frame Generation.
+#   dlss overlay <on|off>       The DLSS / DLSS-G debug indicator overlay.
+#   dlss dlls                   Open DLSS Updater (swap the DLL versions).
+#   dlss launch-options         Print the same settings as a Steam launch
+#                               options string, for one game only.
+#   dlss reset                  Clear every override back to app-controlled.
+#
+# <preset> is a letter A-O, or 'latest' (DLSS 4.5+ reads this as
+# "recommended"), or 'off' to hand the choice back to the game.
+#
+# <mode> is off | 2x | 3x | 4x | 5x | 6x | auto | dynamic.
+#
+# How this works: Proton's NVAPI shim (DXVK-NVAPI) reads the same driver
+# settings the NVIDIA App writes on Windows, from environment variables named
+# DXVK_NVAPI_DRS_<SETTING>. They are written into
+# ~/.config/environment.d/95-gaming.conf, which systemd exports to the whole
+# session (so the autostarted Steam gets them too) and
+# which ~/.local/bin/steam-gaming also re-applies - so fully quit
+# Steam and start it again for a change to reach your games.
+#
+# The DLL versions themselves are a separate job: `dlss dlls` opens DLSS
+# Updater, which swaps nvngx_dlss*.dll inside each game.
+#
+set -uo pipefail
+
+# The real file lives in environment.d so that systemd's user session exports
+# it to EVERYTHING - including the Steam that KDE autostarts at login, which
+# does not go through any launcher we control. ~/.config/gaming-env.conf is a
+# symlink here for convenience; write to the real path, because the temp-file
+# rename below would otherwise replace the symlink with a regular file.
+CONF="${HOME}/.config/environment.d/95-gaming.conf"
+BEGIN="# BEGIN DLSS"
+END="# END DLSS"
+
+die()  { printf '%s\n' "$*" >&2; exit 1; }
+
+[ -f "$CONF" ] || die "$CONF does not exist. Was the gaming setup installed?"
+grep -q "^${BEGIN}\$" "$CONF" || die "$CONF has no '$BEGIN' marker."
+
+# --- reading and writing the managed block ------------------------------------
+block()      { sed -n "/^${BEGIN}\$/,/^${END}\$/p" "$CONF" | sed '1d;$d'; }
+get()        { block | grep "^$1=" | tail -1 | cut -d= -f2-; }
+
+set_var() {  # set_var NAME VALUE   (empty VALUE removes the line)
+    local name="$1" value="${2:-}" tmp
+    tmp=$(mktemp)
+    awk -v b="$BEGIN" -v e="$END" -v n="$name" -v v="$value" '
+        $0==b { print; inblk=1; next }
+        $0==e { if (v != "") print n "=" v; print; inblk=0; next }
+        inblk && $0 ~ "^" n "=" { next }
+        { print }
+    ' "$CONF" > "$tmp" && mv "$tmp" "$CONF"
+}
+
+# --- value tables -------------------------------------------------------------
+# Presets A-O plus 'latest'; anything else is the game's own choice.
+preset_value() {
+    local p; p=$(printf '%s' "$1" | tr '[:lower:]' '[:upper:]')
+    case "$p" in
+        OFF|APP|APP-CONTROLLED|DEFAULT) printf 'OFF' ;;
+        LATEST|RECOMMENDED)             printf 'RENDER_PRESET_LATEST' ;;
+        [A-O])                          printf 'RENDER_PRESET_%s' "$p" ;;
+        *) return 1 ;;
+    esac
+}
+
+# DXVK-NVAPI's multi-frame count: 0 off, 1 = 2x, 2 = 3x, 3 = 4x ...
+mfg_count() {
+    case "$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')" in
+        off|0)      printf '0' ;;
+        2x|2)       printf '1' ;;
+        3x|3)       printf '2' ;;
+        4x|4)       printf '3' ;;
+        5x|5)       printf '4' ;;
+        6x|6)       printf '5' ;;
+        *) return 1 ;;
+    esac
+}
+
+pretty_preset() {
+    case "${1:-}" in
+        "")                    printf 'app-controlled' ;;
+        OFF)                   printf 'app-controlled' ;;
+        RENDER_PRESET_LATEST)  printf 'Latest / recommended' ;;
+        RENDER_PRESET_*)       printf 'Preset %s' "${1##*_}" ;;
+        *)                     printf '%s' "$1" ;;
+    esac
+}
+
+pretty_mfg() {
+    case "${1:-}" in
+        "")  printf 'app-controlled' ;;
+        0)   printf 'off' ;;
+        1)   printf '2x' ;; 2) printf '3x' ;; 3) printf '4x' ;;
+        4)   printf '5x' ;; 5) printf '6x' ;;
+        *)   printf '%s' "$1" ;;
+    esac
+}
+
+restart_hint() {
+    # Push the change into the running session too, so anything started from
+    # now on picks it up without waiting for a re-login.
+    systemctl --user daemon-reload 2>/dev/null || true
+    printf '\nFully quit Steam and start it again for this to reach your games.\n'
+}
+
+# --- commands -----------------------------------------------------------------
+cmd_status() {
+    printf 'DLSS overrides (global, applied to every Proton game)\n\n'
+    printf '  Super Resolution   %s\n' \
+        "$(pretty_preset "$(get DXVK_NVAPI_DRS_NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION)")"
+    printf '  Ray Reconstruction %s\n' \
+        "$(pretty_preset "$(get DXVK_NVAPI_DRS_NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION)")"
+    local mode count
+    mode=$(get DXVK_NVAPI_DRS_NGX_DLSSG_MODE)
+    count=$(get DXVK_NVAPI_DRS_NGX_DLSSG_MULTI_FRAME_COUNT)
+    printf '  Frame Generation   %s%s\n' "$(pretty_mfg "$count")" \
+        "${mode:+ (mode: $(printf '%s' "$mode" | tr '[:upper:]' '[:lower:]'))}"
+    local ovl; ovl=$(get DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS)
+    case "$ovl" in
+        *DLSSIndicator=1024*) printf '  Debug overlay      on\n' ;;
+        *DLSSIndicator=0*)    printf '  Debug overlay      off\n' ;;
+        *)                    printf '  Debug overlay      not set\n' ;;
+    esac
+    printf '\n  DLSS DLL upgrade   %s\n' \
+        "$(grep -q '^PROTON_DLSS_UPGRADE=1' "$CONF" && echo 'on (Proton pulls the newest DLLs)' || echo off)"
+    printf '  MangoHud overlay   %s\n' \
+        "$(grep -q '^MANGOHUD=1' "$CONF" && echo "on ('/' toggles it)" || echo off)"
+    printf '\n  Config: %s\n' "$CONF"
+}
+
+cmd_sr() {
+    local v; v=$(preset_value "${1:?usage: dlss sr <A-O|latest|off>}") \
+        || die "Unknown SR preset '$1'. Use A-O, latest, or off."
+    if [ "$v" = OFF ]; then
+        set_var DXVK_NVAPI_DRS_NGX_DLSS_SR_OVERRIDE ""
+        set_var DXVK_NVAPI_DRS_NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION ""
+    else
+        set_var DXVK_NVAPI_DRS_NGX_DLSS_SR_OVERRIDE on
+        set_var DXVK_NVAPI_DRS_NGX_DLSS_SR_OVERRIDE_RENDER_PRESET_SELECTION "$v"
+    fi
+    printf 'Super Resolution -> %s\n' "$(pretty_preset "$v")"; restart_hint
+}
+
+cmd_rr() {
+    local v; v=$(preset_value "${1:?usage: dlss rr <A-O|latest|off>}") \
+        || die "Unknown RR preset '$1'. Use A-O, latest, or off."
+    if [ "$v" = OFF ]; then
+        set_var DXVK_NVAPI_DRS_NGX_DLSS_RR_OVERRIDE ""
+        set_var DXVK_NVAPI_DRS_NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION ""
+    else
+        set_var DXVK_NVAPI_DRS_NGX_DLSS_RR_OVERRIDE on
+        set_var DXVK_NVAPI_DRS_NGX_DLSS_RR_OVERRIDE_RENDER_PRESET_SELECTION "$v"
+    fi
+    printf 'Ray Reconstruction -> %s\n' "$(pretty_preset "$v")"; restart_hint
+}
+
+cmd_mfg() {
+    local arg="${1:?usage: dlss mfg <off|2x|3x|4x|5x|6x|auto|dynamic>}"
+    case "$(printf '%s' "$arg" | tr '[:upper:]' '[:lower:]')" in
+        auto|dynamic)
+            set_var DXVK_NVAPI_DRS_NGX_DLSS_FG_OVERRIDE on
+            set_var DXVK_NVAPI_DRS_NGX_DLSSG_MODE "$(printf '%s' "$arg" | tr '[:upper:]' '[:lower:]')"
+            set_var DXVK_NVAPI_DRS_NGX_DLSSG_MULTI_FRAME_COUNT ""
+            printf 'Frame Generation -> %s\n' "$arg" ;;
+        off)
+            set_var DXVK_NVAPI_DRS_NGX_DLSS_FG_OVERRIDE ""
+            set_var DXVK_NVAPI_DRS_NGX_DLSSG_MODE ""
+            set_var DXVK_NVAPI_DRS_NGX_DLSSG_MULTI_FRAME_COUNT ""
+            printf 'Frame Generation -> app-controlled\n' ;;
+        *)
+            local c; c=$(mfg_count "$arg") \
+                || die "Unknown FG mode '$arg'. Use off, 2x, 3x, 4x, 5x, 6x, auto or dynamic."
+            set_var DXVK_NVAPI_DRS_NGX_DLSS_FG_OVERRIDE on
+            set_var DXVK_NVAPI_DRS_NGX_DLSSG_MODE on
+            set_var DXVK_NVAPI_DRS_NGX_DLSSG_MULTI_FRAME_COUNT "$c"
+            printf 'Frame Generation -> %s\n' "$(pretty_mfg "$c")" ;;
+    esac
+    restart_hint
+}
+
+cmd_overlay() {
+    case "${1:-toggle}" in
+        on)
+            # 1024 is the DLSS indicator, 2 the DLSS-G one. NGX reads these
+            # from the Wine registry, so DXVK-NVAPI writes them there for us.
+            set_var DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS "DLSSIndicator=1024,DLSSGIndicator=2"
+            printf 'DLSS debug overlay -> on\n' ;;
+        off)
+            # It has to be written as zero, not removed: the values live in the
+            # prefix registry, so dropping the variable leaves the last write
+            # in place and the overlay stays on.
+            set_var DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS "DLSSIndicator=0,DLSSGIndicator=0"
+            printf 'DLSS debug overlay -> off\n'
+            printf '(Leave this set for one run of each game so the zero reaches its registry.)\n' ;;
+        status)
+            cmd_status | grep 'Debug overlay'; return 0 ;;
+        toggle)
+            case "$(get DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS)" in
+                *DLSSIndicator=1024*) cmd_overlay off; return ;;
+                *) cmd_overlay on; return ;;
+            esac ;;
+        *) die "usage: dlss overlay <on|off|status>" ;;
+    esac
+    restart_hint
+}
+
+cmd_launch_options() {
+    local out=""
+    while IFS= read -r line; do
+        [ -z "$line" ] && continue
+        case "$line" in \#*) continue ;; esac
+        out="${out}${line} "
+    done < <(block)
+    if [ -z "$out" ]; then
+        printf 'No overrides set, so there is nothing to paste.\n'
+        printf 'Set some first, e.g.:  dlss sr K\n'
+        return 0
+    fi
+    printf 'Steam -> right-click the game -> Properties -> Launch Options:\n\n'
+    printf '%s%%command%%\n' "$out"
+    printf '\nUse this only if you want ONE game to differ from the global settings.\n'
+}
+
+cmd_reset() {
+    local tmp; tmp=$(mktemp)
+    awk -v b="$BEGIN" -v e="$END" '
+        $0==b { print; inblk=1; next }
+        $0==e { print; inblk=0; next }
+        inblk { next }
+        { print }' "$CONF" > "$tmp" && mv "$tmp" "$CONF"
+    printf 'All DLSS overrides cleared - every game is back to its own settings.\n'
+    restart_hint
+}
+
+cmd_dlls() {
+    command -v flatpak >/dev/null || die "flatpak not found."
+    flatpak info io.github.recol.dlss-updater >/dev/null 2>&1 \
+        || die "DLSS Updater is not installed."
+    printf 'Opening DLSS Updater (Games -> pick a title -> update or roll back its DLLs).\n'
+    setsid flatpak run io.github.recol.dlss-updater >/dev/null 2>&1 &
+}
+
+case "${1:-status}" in
+    status)            cmd_status ;;
+    sr)                cmd_sr "${2:-}" ;;
+    rr)                cmd_rr "${2:-}" ;;
+    mfg|fg)            cmd_mfg "${2:-}" ;;
+    overlay)           cmd_overlay "${2:-toggle}" ;;
+    dlls|dll|versions) cmd_dlls ;;
+    launch-options)    cmd_launch_options ;;
+    reset)             cmd_reset ;;
+    -h|--help|help)    sed -n '3,30p' "$0" | sed 's/^# \{0,1\}//' ;;
+    *) die "Unknown command '$1'. Try: dlss help" ;;
+esac

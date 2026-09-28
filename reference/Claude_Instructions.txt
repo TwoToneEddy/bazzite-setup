@@ -1,0 +1,45 @@
+I want you to test up this new system for gaming. Do the following (in any order you see fit):
+
+Make sure my nvidia drivers are up to date
+Get me something installed that allows me to set the dlss version and preset for SR, RR and MFG
+Get me something that can toggle the dlss overlay on
+Get me something like MSI afterburner that can show me performance overlays. Allow me to toggle with '/'
+I have a rog astral, on windows I can see all 6 currents, get me this.
+Ensure my monitor is running at the full 280hz
+Install something that can manage my fans, apply the settings I have on /run/media/lee/9AD6814BD6812919/Program Files (x86)/FanControl/Configurations/
+Get a tool installed that can do an undervolt on my gpu
+Make it so I can make my displays sleep when I hit "pause / break"
+Implement the display switching I have on windows that can be found here: /run/media/lee/9AD6814BD6812919/ConfigUtils/scripts/DisplaySwitch
+Install:
+
+google chrome
+Discord
+
+
+Make sure you test everything, I don't want you to say you're done only to find something doesnt work
+
+
+
+OK i don't like the current solution for the per pin current sensing. Do something else and make sure i'ts on the OSD
+Look at my windows afterburner OSD config make sure you match this exactly as mangohud has way more than I like
+
+NEW!!
+Give me an icon on my task bar that I can use to toggle the dlss debug overlay. I have this on windows here: /run/media/lee/9AD6814BD6812919/ConfigUtils/scripts/DlssOverlay
+The icon should reflect the current state of the osd too. Copy the same icons as used in windows
+
+When I start hunt, it suddenly jumps out of game screen and to the desktop, I have to click back on the hunt window to get it back, not a big issue.
+
+the screen swithcing works well, add this to the task bar. Investigate why that when I first start bazzite, both monitors are on until I unlock, then it goes back to what it was before (1 monitor in this case)
+
+Put the screen switching on the task bar
+
+Look at the state of my system, see if there are any gains we can make in terms of performance. I want a trimmed down system that just works
+
+Add discord to task bar
+
+Give me the option to run something like steamos game launcher, I think bazzite has this but I chose not to launch into it, i would like the option to try it out
+
+Document the state of my system, all the things you've done and the current state so I can apply this at a later date should I need to
+Add to the documentation what I would need to do to get games that are "non-steam" working
+Make the documentation describe how to tweak the various things you've done, ie, current alarm level
+If there is anything we could potentially add to version control detail let me know

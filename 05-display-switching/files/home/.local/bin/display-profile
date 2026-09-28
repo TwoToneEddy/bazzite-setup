@@ -1,0 +1,275 @@
+#!/usr/bin/env bash
+#
+# display-profile - named display layouts, the Linux port of the Windows
+# Switch-Display.ps1 / "Desk Gaming.bat" / "Desk Work.bat" / "TV Mode.bat" set.
+#
+#   display-profile gaming     AOC only, 2560x1440 @ 280Hz. TV and Dell off.
+#   display-profile work       AOC primary @ 280Hz with the Dell to its right.
+#   display-profile tv         Philips TV only, 4K @ 120Hz. AOC and Dell off.
+#   display-profile dell       Dell U2413 only. AOC and TV off.
+#   display-profile status     Show what is on right now.
+#
+# Options:
+#   --no-limiter   Do not touch the MangoHud frame limiter (see below).
+#
+# Notes carried over from the Windows script:
+#
+#   * The layout is applied in ONE kscreen-doctor call. Doing it as a sequence
+#     of enable/disable steps does not work reliably - the compositor refuses
+#     to disable the last enabled output, and re-enabling an output without
+#     naming its mode in the same call leaves it on whatever mode it feels
+#     like. One atomic call sidesteps both.
+#
+#   * The mode is named explicitly every time. Neither Windows nor KWin
+#     reliably restores the mode an output was last using when it comes back.
+#
+#   * Modes are handed to kscreen-doctor by their index, not as "1920x1200@59.95":
+#     it refuses to parse a fractional refresh rate in that form, which is
+#     exactly what the Dell's only mode is.
+#
+#   * The Windows version flipped the RTSS limiter on. The equivalent here is
+#     MangoHud's frame limiter: each profile puts its own refresh rate at the
+#     front of fps_limit= in MangoHud.conf, so newly launched games are capped
+#     at the refresh rate of the screen they are actually running on. Pass
+#     --no-limiter to leave MangoHud.conf alone.
+#
+set -uo pipefail
+
+# --- monitor identity ---------------------------------------------------------
+# Windows names these by hardware id; the equivalent here is the connector.
+# Each is paired with the resolution its EDID is known for, so a connector
+# rename is caught rather than silently applying the layout to the wrong panel.
+AOC_OUT="DP-4"          ; AOC_SIG="2560x1440"    # AOCA610  - AOC AG276QZD2
+DELL_OUT="HDMI-A-3"     ; DELL_SIG="1920x1200"   # DELF048  - Dell U2413
+TV_OUT="HDMI-A-2"       ; TV_SIG="3840x2160"     # PHL0B82  - Philips 48OLED707
+
+MANGO_CONF="${HOME}/.config/MangoHud/MangoHud.conf"
+KD=kscreen-doctor
+
+die()  { printf '%s\n' "$*" >&2; exit 1; }
+note() { printf '%s\n' "$*"; }
+
+# Strip kscreen-doctor's colour codes; everything below parses plain text.
+outputs_raw() { $KD -o 2>/dev/null | sed -e 's/\x1b\[[0-9;]*m//g'; }
+
+# Normalise a refresh rate for display and comparison: 280.00 -> 280, 59.95 stays.
+norm_mode() { sed -e 's/@\([0-9]*\)\.00$/@\1/'; }
+
+connected() {
+    outputs_raw | awk -v want="$1" '
+        /^Output:/ { name=$3; next }
+        /^[[:space:]]*connected$/ { if (name==want) found=1 }
+        END { exit(found?0:1) }'
+}
+
+enabled() {
+    outputs_raw | awk -v want="$1" '
+        /^Output:/ { name=$3; next }
+        /^[[:space:]]*enabled$/ { if (name==want) found=1 }
+        END { exit(found?0:1) }'
+}
+
+all_outputs() { outputs_raw | awk '/^Output:/ {print $3}'; }
+
+# modes_of <connector> -> "<id> <WxH@R>" per line, e.g. "24 2560x1440@280"
+modes_of() {
+    outputs_raw | awk -v want="$1" '
+        /^Output:/ { name=$3; next }
+        /^[[:space:]]*Modes:/ {
+            if (name!=want) next
+            for (i=1;i<=NF;i++) if ($i ~ /^[0-9]+:[0-9]+x[0-9]+@[0-9.]+/) {
+                split($i,a,":"); id=a[1]; m=a[2]
+                sub(/[*!]+$/,"",m)
+                print id, m
+            }
+        }' | norm_mode
+}
+
+# best_mode <connector> <WxH> [preferred_hz] -> "<id> <WxH@R>"
+# The preferred rate if the panel offers it, otherwise its highest at that size.
+best_mode() {
+    local out="$1" res="$2" want="${3:-}" all hit
+    all=$(modes_of "$out" | awk -v r="$res" '$2 ~ "^" r "@"')
+    [ -z "$all" ] && return 1
+    if [ -n "$want" ]; then
+        hit=$(printf '%s\n' "$all" | awk -v m="${res}@${want}" '$2==m {print; exit}')
+        [ -n "$hit" ] && { printf '%s\n' "$hit"; return 0; }
+    fi
+    printf '%s\n' "$all" |
+        awk '{ split($2,p,"@"); if (p[2]+0 > best) { best=p[2]+0; line=$0 } } END { print line }'
+}
+
+# current_mode <connector> -> the mode marked current (trailing *)
+current_mode() {
+    outputs_raw | awk -v want="$1" '
+        /^Output:/ { name=$3; next }
+        /^[[:space:]]*Modes:/ {
+            if (name!=want) next
+            for (i=1;i<=NF;i++) if ($i ~ /\*/) {
+                split($i,a,":"); m=a[2]; sub(/[*!]+$/,"",m); print m
+            }
+        }' | head -1 | norm_mode
+}
+
+# --- the MangoHud limiter -----------------------------------------------------
+set_limiter() {
+    local hz="$1" rest new
+    [ "$LIMITER" = "no" ] && return 0
+    [ -f "$MANGO_CONF" ] || { note "  (MangoHud.conf not found, limiter unchanged)"; return 0; }
+    hz=${hz%.*}                       # 59.95 -> 59; MangoHud wants an integer
+    # Sit just under the refresh rate. At exactly the panel maximum the frame
+    # rate keeps bouncing off the VRR ceiling and falls back to plain vsync (or
+    # tears), so the usual practice is a few frames of headroom.
+    [ "$hz" -gt 70 ] 2>/dev/null && hz=$((hz - 4))
+    rest=$(grep '^fps_limit=' "$MANGO_CONF" | head -1 | cut -d= -f2- \
+           | tr ',' '\n' | grep -vx "$hz" | paste -sd, -)
+    new="fps_limit=${hz}${rest:+,$rest}"
+    if grep -q '^fps_limit=' "$MANGO_CONF"; then
+        sed -i "s|^fps_limit=.*|$new|" "$MANGO_CONF"
+    else
+        printf '%s\n' "$new" >> "$MANGO_CONF"
+    fi
+    note "  MangoHud frame limiter -> ${hz} fps (applies to games started from now on)"
+}
+
+# --- applying a layout --------------------------------------------------------
+# apply <primary> <pid> <plabel> [<second> <sid> <slabel> <x,y>]
+apply() {
+    local primary="$1" pid="$2" plabel="$3"
+    local second="${4:-}" sid="${5:-}" slabel="${6:-}" spos="${7:-}"
+    local -a on=("$primary") args=()
+    local o x keep all cur ok=yes
+
+    [ -n "$second" ] && on+=("$second")
+
+    # Refuse before changing anything if a wanted screen is not there - the
+    # Windows script's "Is it powered on and on the right input?" check.
+    for o in "${on[@]}"; do
+        connected "$o" ||
+            die "$o is not connected. Is it powered on and on the right input? Nothing changed."
+    done
+
+    # Everything not in the wanted set gets switched off, in the same call.
+    all=$(all_outputs)
+    for o in $all; do
+        keep=no
+        for x in "${on[@]}"; do [ "$o" = "$x" ] && keep=yes; done
+        [ "$keep" = no ] && args+=("output.${o}.disable")
+    done
+
+    args+=("output.${primary}.enable"
+           "output.${primary}.mode.${pid}"
+           "output.${primary}.position.0,0"
+           "output.${primary}.priority.1")
+    # Adaptive sync (G-Sync) on the AOC. "automatic" means KWin turns it on for
+    # fullscreen windows only, which is what you want on an OLED - always-on can
+    # make the panel flicker on a mostly-static desktop.
+    [ "$primary" = "$AOC_OUT" ] && args+=("output.${primary}.vrrpolicy.automatic")
+    if [ -n "$second" ]; then
+        args+=("output.${second}.enable"
+               "output.${second}.mode.${sid}"
+               "output.${second}.position.${spos}"
+               "output.${second}.priority.2")
+    fi
+
+    note "Applying: ${on[*]} (primary ${primary} @ ${plabel})"
+    $KD "${args[@]}" 2>&1 | sed 's/^/  /'
+    sleep 2
+
+    # Read back. The mode in particular is worth re-checking: the AOC only
+    # reaches 280Hz once the TV is off, so the first attempt can land short.
+    cur=$(current_mode "$primary")
+    if [ "$cur" != "$plabel" ]; then
+        note "  ${primary} came up at ${cur:-unknown}, re-pinning ${plabel}..."
+        pid=$(best_mode "$primary" "${plabel%@*}" "${plabel##*@}" | cut -d' ' -f1)
+        [ -n "$pid" ] && $KD "output.${primary}.mode.${pid}" >/dev/null 2>&1
+        sleep 2
+        cur=$(current_mode "$primary")
+    fi
+
+    enabled "$primary" || { note "  !! ${primary} is not enabled"; ok=no; }
+    [ "$cur" = "$plabel" ] || { note "  !! ${primary} is at ${cur:-unknown}, wanted ${plabel}"; ok=no; }
+    if [ -n "$second" ]; then
+        enabled "$second" || { note "  !! ${second} is not enabled"; ok=no; }
+        local scur; scur=$(current_mode "$second")
+        [ "$scur" = "$slabel" ] || note "  note: ${second} is at ${scur:-unknown}, wanted ${slabel}"
+    fi
+    [ "$ok" = yes ] && note "  verified: ${primary} ${cur}${second:+, ${second} on}"
+    set_limiter "${plabel##*@}"
+    [ "$ok" = yes ]
+}
+
+# --- profiles -----------------------------------------------------------------
+profile_gaming() {
+    local m; m=$(best_mode "$AOC_OUT" "$AOC_SIG" 280) \
+        || die "$AOC_OUT does not offer $AOC_SIG. Wrong connector?"
+    apply "$AOC_OUT" ${m}
+}
+
+profile_work() {
+    local m s
+    m=$(best_mode "$AOC_OUT" "$AOC_SIG" 280) \
+        || die "$AOC_OUT does not offer $AOC_SIG. Wrong connector?"
+    s=$(best_mode "$DELL_OUT" "$DELL_SIG") \
+        || die "$DELL_OUT does not offer $DELL_SIG. Wrong connector?"
+    apply "$AOC_OUT" ${m} "$DELL_OUT" ${s} "${AOC_SIG%x*},0"
+}
+
+profile_tv() {
+    local m; m=$(best_mode "$TV_OUT" "$TV_SIG" 120) \
+        || die "$TV_OUT does not offer $TV_SIG. Is the TV powered on and on this input?"
+    local label=${m#* }
+    if [ "${label##*@}" != "120" ]; then
+        note "Note: the TV is only offering ${label} right now, not 4K120."
+        note "      4K120 needs the TV awake on an HDMI port set to its high-bandwidth"
+        note "      mode (Philips: 'HDMI Ultra HD' = Optimal). That is an EDID-side"
+        note "      limit, not something this script can force. Applying ${label}."
+    fi
+    apply "$TV_OUT" ${m}
+}
+
+profile_dell() {
+    local m; m=$(best_mode "$DELL_OUT" "$DELL_SIG") \
+        || die "$DELL_OUT does not offer $DELL_SIG. Is the Dell powered on?"
+    apply "$DELL_OUT" ${m}
+}
+
+profile_status() {
+    local o label
+    for o in $(all_outputs); do
+        label="other"
+        [ "$o" = "$AOC_OUT" ]  && label="AOC AG276QZD2"
+        [ "$o" = "$DELL_OUT" ] && label="Dell U2413"
+        [ "$o" = "$TV_OUT" ]   && label="Philips 48OLED707"
+        if enabled "$o"; then
+            printf '  %-10s %-20s ON   %s\n' "$o" "$label" "$(current_mode "$o")"
+        elif connected "$o"; then
+            printf '  %-10s %-20s off  (connected)\n' "$o" "$label"
+        else
+            printf '  %-10s %-20s --   (not connected)\n' "$o" "$label"
+        fi
+    done
+    [ -f "$MANGO_CONF" ] && printf '  MangoHud limiter: %s fps\n' \
+        "$(grep '^fps_limit=' "$MANGO_CONF" | head -1 | cut -d= -f2- | cut -d, -f1)"
+    return 0
+}
+
+# --- entry point --------------------------------------------------------------
+LIMITER=yes
+ACTION=""
+for a in "$@"; do
+    case "$a" in
+        --no-limiter) LIMITER=no ;;
+        -h|--help) sed -n '3,35p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) ACTION="$a" ;;
+    esac
+done
+
+case "$ACTION" in
+    gaming|desk-gaming) profile_gaming ;;
+    work|desk-work)     profile_work ;;
+    tv|tv-mode)         profile_tv ;;
+    dell|dell-only)     profile_dell ;;
+    status|"")          profile_status ;;
+    *) die "Unknown profile '$ACTION'. Use: gaming | work | tv | dell | status" ;;
+esac

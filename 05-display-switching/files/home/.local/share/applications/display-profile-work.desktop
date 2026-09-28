@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Desk Work
+Comment=AOC primary @ 280Hz with the Dell to its right. TV off.
+Exec=/home/lee/.local/bin/display-profile work
+Icon=display-profile-work
+Terminal=false
+Categories=Settings;HardwareSettings;
+Keywords=display;monitor;screen;refresh;
+StartupNotify=false

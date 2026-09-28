@@ -1,0 +1,3 @@
+# Installer logs and scratch, never the configuration itself.
+*.log
+.install*.log

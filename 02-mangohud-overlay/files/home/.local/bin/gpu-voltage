@@ -1,0 +1,80 @@
+#!/usr/bin/env python3
+"""gpu-voltage - publish the RTX 5090's core voltage for the MangoHud overlay.
+
+MangoHud's own `gpu_voltage` is useless on this card. It reads NVIDIA GPUs
+through NVML, and NVML has no voltage API at all - `nm -D libnvidia-ml.so.1`
+turns up no voltage symbol, and `nvidia-smi -q -d VOLTAGE` prints an empty
+section. The row would sit at a permanent 0 mV.
+
+LACT gets it by a different route (NvAPI), so this asks lactd once a second and
+republishes the answer as plain text, exactly like gpu-peaks and astral-pins.
+
+The GPU id is NOT optional. `lact cli stats` with no -g silently selects GPU 0,
+which is the Radeon iGPU in the 9800X3D, and happily prints its voltage - about
+1170 mV, plausible enough to look like a real answer while having nothing to do
+with the 5090. Note -g is a flag on `lact cli`, not on `stats`, so it goes
+before the subcommand.
+`lact cli stats` costs ~16 ms, which is fine once a second and would not be fine
+at MangoHud's refresh rate - hence a daemon and a file rather than an `exec` in
+MangoHud.conf.
+
+/dev/shm rather than /run because Steam runs games inside a pressure-vessel
+container with its own /run, so anything written there is invisible to them.
+The container also has no `lact` binary, which is the second reason MangoHud
+cannot just run the command itself.
+
+  gpu-voltage --daemon    loop, publishing the voltage (this is the service)
+  gpu-voltage --status    print it once
+"""
+
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
+
+OUT = "/dev/shm/gpu-voltage.mv"
+GPU_ID = "10DE:2B85-1043:89E3-0000:01:00.0"
+PATTERN = re.compile(r"^GPU Voltage:\s*(\d+)\s*mV", re.M)
+
+
+def read_mv():
+    """Return the core voltage in mV, or None if lactd did not answer."""
+    try:
+        out = subprocess.run(
+            ["lact", "cli", "-g", GPU_ID, "stats"],
+            capture_output=True, text=True, timeout=5,
+        ).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    m = PATTERN.search(out)
+    return int(m.group(1)) if m else None
+
+
+def publish(mv):
+    """Write atomically - MangoHud reads this file underneath us."""
+    text = f"{mv} mV" if mv is not None else "--"
+    tmp = OUT + ".tmp"
+    with open(tmp, "w") as f:
+        f.write(text + "\n")
+    os.replace(tmp, OUT)
+
+
+def daemon():
+    for sig in (signal.SIGTERM, signal.SIGINT):
+        signal.signal(sig, lambda *_: sys.exit(0))
+    while True:
+        publish(read_mv())
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    arg = sys.argv[1] if len(sys.argv) > 1 else "--status"
+    if arg == "--daemon":
+        daemon()
+    elif arg == "--status":
+        mv = read_mv()
+        print(f"{mv} mV" if mv is not None else "unavailable")
+    else:
+        sys.exit(__doc__)

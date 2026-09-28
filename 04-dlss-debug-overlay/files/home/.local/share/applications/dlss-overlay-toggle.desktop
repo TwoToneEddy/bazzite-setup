@@ -1,0 +1,25 @@
+[Desktop Entry]
+Type=Application
+Name=DLSS Overlay: ON
+GenericName=DLSS debug overlay
+Comment=DLSS debug overlay is ON - click to turn it off
+Exec=/home/lee/.local/bin/dlss-overlay-toggle
+Icon=dlss-overlay-on
+Terminal=false
+StartupNotify=false
+Categories=Game;Settings;
+Keywords=dlss;nvidia;overlay;indicator;
+
+Actions=On;Off;Status;
+
+[Desktop Action On]
+Name=Turn overlay on
+Exec=/home/lee/.local/bin/dlss-overlay-toggle on
+
+[Desktop Action Off]
+Name=Turn overlay off
+Exec=/home/lee/.local/bin/dlss-overlay-toggle off
+
+[Desktop Action Status]
+Name=Show DLSS settings
+Exec=konsole --hold -e /home/lee/.local/bin/dlss status

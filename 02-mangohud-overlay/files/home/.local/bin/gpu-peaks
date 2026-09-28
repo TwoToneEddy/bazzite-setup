@@ -1,0 +1,117 @@
+#!/usr/bin/env python3
+"""gpu-peaks - track the highest GPU temperature and power draw seen, for the overlay.
+
+MangoHud shows current values but has no max/peak tracking of its own - there is
+no gpu_temp_max or equivalent parameter, which Afterburner does have. This fills
+that gap the same way the 12V-2x6 rows work: a small daemon publishes plain text
+to /dev/shm and MangoHud just reads the file.
+
+/dev/shm rather than /run because Steam runs games inside a pressure-vessel
+container with its own /run, so anything written there is invisible to them.
+
+Reads NVML directly rather than shelling out to nvidia-smi, which costs ~50-100 ms
+a call and would be absurd once a second.
+
+  gpu-peaks --daemon     loop, publishing the peaks (this is the service)
+  gpu-peaks --reset      zero the peaks, e.g. at the start of a benchmark run
+  gpu-peaks --status     print them
+"""
+
+import ctypes
+import os
+import signal
+import sys
+import time
+
+OUT_TEMP  = "/dev/shm/gpu-peaks.temp"
+OUT_POWER = "/dev/shm/gpu-peaks.power"
+RESET_FLAG = "/dev/shm/gpu-peaks.reset"
+NVML_TEMPERATURE_GPU = 0
+
+
+def nvml_open():
+    lib = ctypes.CDLL("libnvidia-ml.so.1")
+    if lib.nvmlInit_v2() != 0:
+        raise RuntimeError("nvmlInit failed")
+    dev = ctypes.c_void_p()
+    if lib.nvmlDeviceGetHandleByIndex_v2(0, ctypes.byref(dev)) != 0:
+        raise RuntimeError("no NVIDIA device 0")
+    return lib, dev
+
+
+def sample(lib, dev):
+    t = ctypes.c_uint()
+    p = ctypes.c_uint()
+    temp = t.value if lib.nvmlDeviceGetTemperature(dev, NVML_TEMPERATURE_GPU,
+                                                   ctypes.byref(t)) == 0 else None
+    power = p.value / 1000.0 if lib.nvmlDeviceGetPowerUsage(dev,
+                                                            ctypes.byref(p)) == 0 else None
+    return temp, power
+
+
+def write_atomic(path, text):
+    """temp file + rename, so a reader never sees a half-written line"""
+    tmp = path + ".new"
+    try:
+        with open(tmp, "w") as fh:
+            fh.write(text + "\n")
+        os.replace(tmp, path)
+        os.chmod(path, 0o644)
+    except OSError:
+        try:
+            os.unlink(tmp)
+        except OSError:
+            pass
+
+
+def publish(temp, power):
+    write_atomic(OUT_TEMP, "-" if temp is None else "%d°C" % temp)
+    write_atomic(OUT_POWER, "-" if power is None else "%.0fW" % power)
+
+
+def main():
+    args = sys.argv[1:]
+
+    if "--reset" in args:
+        # the daemon watches for this file and zeroes itself; also blank the
+        # published values immediately so the overlay does not show stale peaks
+        open(RESET_FLAG, "w").close()
+        publish(None, None)
+        return 0
+
+    if "--status" in args:
+        for p in (OUT_TEMP, OUT_POWER):
+            try:
+                print("%-24s %s" % (p, open(p).read().strip()))
+            except OSError:
+                print("%-24s (not running?)" % p)
+        return 0
+
+    if "--daemon" not in args:
+        print(__doc__.strip().splitlines()[-4] if False else
+              "usage: gpu-peaks [--daemon | --reset | --status]", file=sys.stderr)
+        return 2
+
+    lib, dev = nvml_open()
+    peak_t = peak_p = 0.0
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+
+    while True:
+        if os.path.exists(RESET_FLAG):
+            peak_t = peak_p = 0.0
+            try:
+                os.unlink(RESET_FLAG)
+            except OSError:
+                pass
+
+        temp, power = sample(lib, dev)
+        if temp is not None and temp > peak_t:
+            peak_t = temp
+        if power is not None and power > peak_p:
+            peak_p = power
+        publish(peak_t if peak_t else None, peak_p if peak_p else None)
+        time.sleep(1)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

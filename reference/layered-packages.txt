@@ -1,0 +1,4 @@
+          LayeredPackages: coolercontrol gamescope-session-steam lact liquidctl
+
+--
+          LayeredPackages: coolercontrol gamescope-session-steam lact liquidctl

@@ -1,0 +1,77 @@
+#!/bin/bash
+# astral-pins-alarm - raise a 12V-2x6 overcurrent alarm on the logged-in desktop.
+#
+# Called by astral-pins.service as:   astral-pins-alarm on|off PIN AMPS
+#
+# The service runs as root, but a notification and a sound have to land in the
+# user's own session, so this finds whoever is logged in on seat0 and drops to
+# them with the right XDG_RUNTIME_DIR and D-Bus address. Hardcoding uid 1000
+# would work today but breaks the moment the machine has another user.
+#
+# *** astral-pins.service MUST NOT set ProtectHome=yes. ***
+# ProtectHome also hides /run/user, which is where both the D-Bus session socket
+# and the PipeWire/Pulse socket live, so notify-send and paplay both fail with
+# "Permission denied" / "Connection refused" while the alarm itself looks like it
+# fired perfectly. There is a comment in the unit file saying the same thing.
+#
+# Sound matters more than the notification: a full-screen game usually hides
+# notifications, but audio always gets through. Every step reports its exit code
+# to the journal, because a silent failure here is indistinguishable from no
+# alarm condition at all.
+
+set -u
+
+STATE="${1:-on}"
+PIN="${2:-?}"
+AMPS="${3:-?}"
+
+# Short and sharp, repeated, rather than one long tone: the alarm re-fires every
+# 30 s while the condition lasts, and alarm-clock-elapsed.oga is 6 s a go.
+SOUND_ALARM=/usr/share/sounds/freedesktop/stereo/dialog-warning.oga
+SOUND_CLEAR=/usr/share/sounds/freedesktop/stereo/complete.oga
+ALARM_REPEATS=4
+
+log() { echo "astral-pins-alarm: $*" >&2; }
+
+# Whoever owns the active graphical session, falling back to any live session.
+user=$(loginctl list-sessions --no-legend 2>/dev/null | awk '$4=="seat0"{print $3; exit}')
+[ -n "${user:-}" ] || user=$(loginctl list-sessions --no-legend 2>/dev/null | awk '$2!="0"{print $3; exit}')
+if [ -z "${user:-}" ]; then
+    log "nobody logged in, nothing to alarm at"
+    exit 0
+fi
+
+uid=$(id -u "$user" 2>/dev/null) || { log "no such user: $user"; exit 0; }
+runtime="/run/user/$uid"
+
+if [ ! -d "$runtime" ]; then
+    log "FATAL: $runtime is not visible - is ProtectHome=yes set on the service?"
+    exit 1
+fi
+
+# One runuser per job, not one per sound: each call runs a full PAM stack and
+# writes a session open/close pair to the journal.
+as_user() {
+    runuser -u "$user" -- env \
+        XDG_RUNTIME_DIR="$runtime" \
+        DBUS_SESSION_BUS_ADDRESS="unix:path=$runtime/bus" "$@"
+}
+
+if [ "$STATE" = "off" ]; then
+    as_user notify-send -a "12V-2x6" -u normal -i dialog-information \
+            "GPU power connector OK" \
+            "Pin currents are back to normal (peak ${AMPS} A)."
+    log "clear notification rc=$?"
+    as_user paplay "$SOUND_CLEAR"
+    log "clear sound rc=$?"
+    exit 0
+fi
+
+as_user notify-send -a "12V-2x6" -u critical -i dialog-warning \
+        "GPU POWER CONNECTOR OVERCURRENT" \
+        "Pin ${PIN} is drawing ${AMPS} A.
+Check the 12V-2x6 plug is fully seated. Stop gaming if this persists."
+log "alarm notification rc=$? (pin $PIN, $AMPS A)"
+
+as_user sh -c 'for i in $(seq "$1"); do paplay "$2"; done' sh "$ALARM_REPEATS" "$SOUND_ALARM"
+log "alarm sound rc=$? (${ALARM_REPEATS}x)"

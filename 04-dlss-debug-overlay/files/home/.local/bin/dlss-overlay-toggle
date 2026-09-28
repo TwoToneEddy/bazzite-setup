@@ -1,0 +1,108 @@
+#!/bin/bash
+# dlss-overlay-toggle - one-click toggle for the DLSS debug overlay, for the
+# panel. Port of Toggle-DlssOverlay.ps1 from the Windows install.
+#
+# Windows flips a registry value (HKLM\...\NGXCore\ShowDlssIndicator) and then
+# repoints its own shortcut at dlss-on.ico / dlss-off.ico so the icon always
+# shows the CURRENT state. This does the same thing: it flips the DXVK-NVAPI
+# debug option in ~/.config/environment.d/95-gaming.conf via the `dlss` command,
+# then rewrites its own .desktop file to point at the matching icon (converted
+# from the very same .ico files) and nudges Plasma to re-read it.
+#
+# Like the Windows one, this has to be set BEFORE a game starts: NGX only reads
+# the setting when the game creates its DLSS feature, so it cannot change
+# mid-session. Unlike Windows it also needs Steam restarted, because the setting
+# travels in Steam's environment rather than in a registry the game reads live.
+#
+#   dlss-overlay-toggle              flip it
+#   dlss-overlay-toggle on|off       force a state
+#   dlss-overlay-toggle status       print the state, change nothing
+#   dlss-overlay-toggle --refresh    just re-sync the icon to the real state
+
+set -u
+
+DESKTOP_FILE="$HOME/.local/share/applications/dlss-overlay-toggle.desktop"
+SELF="$HOME/.local/bin/dlss-overlay-toggle"
+DLSS="$HOME/.local/bin/dlss"
+
+current_state() {
+    # read it from the config the `dlss` command owns, not from a cached copy
+    case "$("$DLSS" overlay status 2>/dev/null)" in
+        *"overlay      on"*)  echo on  ;;
+        *"overlay      off"*) echo off ;;
+        *)                    echo off ;;
+    esac
+}
+
+write_desktop() {
+    local state="$1" other tip
+    if [ "$state" = on ]; then other=off; else other=on; fi
+    tip="DLSS debug overlay is ${state^^} - click to turn it $other"
+
+    mkdir -p "$(dirname "$DESKTOP_FILE")"
+    cat > "$DESKTOP_FILE" <<DESK
+[Desktop Entry]
+Type=Application
+Name=DLSS Overlay: ${state^^}
+GenericName=DLSS debug overlay
+Comment=$tip
+Exec=$SELF
+Icon=dlss-overlay-$state
+Terminal=false
+StartupNotify=false
+Categories=Game;Settings;
+Keywords=dlss;nvidia;overlay;indicator;
+
+Actions=On;Off;Status;
+
+[Desktop Action On]
+Name=Turn overlay on
+Exec=$SELF on
+
+[Desktop Action Off]
+Name=Turn overlay off
+Exec=$SELF off
+
+[Desktop Action Status]
+Name=Show DLSS settings
+Exec=konsole --hold -e $DLSS status
+DESK
+    chmod +x "$DESKTOP_FILE"
+
+    # Plasma reads launcher icons out of the service cache, so the cache has to
+    # be rebuilt before the panel will notice the Icon= line changed.
+    kbuildsycoca6 --noincremental >/dev/null 2>&1 || \
+        kbuildsycoca5 --noincremental >/dev/null 2>&1 || true
+}
+
+case "${1:-toggle}" in
+    status)
+        echo "DLSS debug overlay is $(current_state)"
+        exit 0 ;;
+    --refresh)
+        write_desktop "$(current_state)"
+        exit 0 ;;
+    on|off)
+        want="$1" ;;
+    toggle)
+        if [ "$(current_state)" = on ]; then want=off; else want=on; fi ;;
+    *)
+        echo "usage: dlss-overlay-toggle [on|off|toggle|status|--refresh]" >&2
+        exit 2 ;;
+esac
+
+"$DLSS" overlay "$want" >/dev/null 2>&1
+now="$(current_state)"
+write_desktop "$now"
+
+if [ "$now" = "$want" ]; then
+    notify-send -a "DLSS Overlay" -i "dlss-overlay-$now" \
+        "DLSS overlay ${now^^}" \
+        "Takes effect next time a game starts DLSS.
+Fully quit Steam and start it again first."
+else
+    notify-send -a "DLSS Overlay" -u critical -i dialog-error \
+        "Could not change the DLSS overlay" \
+        "Tried to set it $want but it is still $now. Run 'dlss status' to see why."
+    exit 1
+fi

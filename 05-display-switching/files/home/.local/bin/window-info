@@ -1,0 +1,14 @@
+#!/bin/bash
+# window-info - open KWin's built-in debug console, which lists every window
+# with its resource class, so a KWin window rule can be matched exactly rather
+# than by a guessed regex.
+#
+# Run it with the game running (alt-tab to a terminal, or over SSH), then look
+# at the "Windows" tab. The "resourceClass" line is what a rule matches on.
+#
+# Under Wayland there is no xprop equivalent - a Wayland-native game has no X11
+# window to inspect - and KWin scripts cannot report back usefully: their print()
+# output is dropped unless the kwin_scripting debug category is enabled, and
+# callDBus out to the notification service is not permitted for scripts loaded
+# this way. Both were tried. The debug console is the supported route.
+exec qdbus-qt6 org.kde.KWin /KWin org.kde.KWin.showDebugConsole

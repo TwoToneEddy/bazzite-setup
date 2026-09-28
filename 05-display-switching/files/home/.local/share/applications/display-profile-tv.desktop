@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=TV Mode
+Comment=Philips 48OLED707 only, 4K. AOC and Dell off.
+Exec=/home/lee/.local/bin/display-profile tv
+Icon=display-profile-tv
+Terminal=false
+Categories=Settings;HardwareSettings;
+Keywords=display;monitor;screen;refresh;
+StartupNotify=false

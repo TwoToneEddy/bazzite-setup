@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+#
+# displays-sleep - blank every display, as the Pause/Break key does on Windows.
+# Bound to Pause in KDE's global shortcuts (see ~/.config/kglobalshortcutsrc).
+#
+# The short pause matters: KWin wakes the screens on any input, and the key
+# RELEASE arrives after this script has already started. Blanking immediately
+# means the release wakes them straight back up, so let it land first.
+sleep 0.4
+exec kscreen-doctor --dpms off

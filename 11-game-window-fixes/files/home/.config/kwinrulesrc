@@ -1,0 +1,18 @@
+[General]
+count=1
+rules=hunt-focus
+
+[hunt-focus]
+Description=Hunt Showdown - keep focus on launch
+wmclass=(?i).*(hunt.?showdown|huntgame|steam_app_594650).*
+wmclassmatch=3
+wmclasscomplete=false
+types=1
+# Focus stealing prevention: None. Lets the game window take focus the moment it
+# maps, instead of KWin holding focus on whatever was in front.
+fsplevel=0
+fsplevelrule=2
+# Focus protection: Extreme. Nothing may then pull focus back off it, which is
+# what drops you to the desktop while the game is still starting up.
+fpplevel=4
+fpplevelrule=2

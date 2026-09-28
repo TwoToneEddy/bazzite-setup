@@ -1,0 +1,13 @@
+[Unit]
+Description=Publish GPU core voltage for the MangoHud overlay
+After=graphical-session.target
+
+[Service]
+Type=simple
+ExecStart=%h/.local/bin/gpu-voltage --daemon
+Restart=on-failure
+RestartSec=5
+Nice=10
+
+[Install]
+WantedBy=graphical-session.target
