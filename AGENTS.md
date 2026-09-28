@@ -4,11 +4,88 @@ You have been handed this directory and asked to reproduce a Linux gaming setup 
 a machine that is not the one it was built on. Read this file first, then
 `README.md`. Work top to bottom; do not skip the preflight.
 
+Two sections below are policy rather than procedure, and both cover ways a
+capable agent reliably goes wrong here. Read them before you install or change
+anything:
+
+* **[Bazzite policy](#bazzite-policy--read-before-installing-anything)** — this is
+  an immutable Fedora Atomic system. `dnf install` is not how software gets
+  installed, `/usr` is read-only, and `/etc` is per-deployment.
+* **[HDR policy](#hdr-policy--washed-out-colours-are-the-default-failure-not-a-bug-you-found)** —
+  washed-out colours are the default failure mode, there are four conditions that
+  must all hold, and most of the advice circulating online does not apply to this
+  configuration.
+
 Read this as the operating procedure, and each component's `README.md` as the
 reference for that component. `reference/GAMING_SETUP_NOTES.md` is the long-form
 history — why each decision was made, what was measured, what was tried and
 rejected. Consult it when a component surprises you; do not read it front to back
 to get started.
+
+---
+
+## Bazzite policy — read before installing anything
+
+**Bazzite is an immutable Fedora Atomic distribution (rpm-ostree).** `/usr` is
+read-only and the whole OS is an image that gets replaced on update. An agent that
+reaches for `dnf install` will make a mess, and a naive one will layer packages it
+did not need to.
+
+**`dnf` is not the package manager here.** `sudo dnf install x` either fails or
+does something you did not intend. Neither is `yum`. Do not write to `/usr` by any
+route; a file placed there is gone at the next update.
+
+Pick a tool in this order, and only fall down the list when the one above cannot
+do the job:
+
+| Want | Use | Note |
+|---|---|---|
+| a GUI application | `flatpak install` | Chrome and Discord here are flatpaks |
+| a CLI tool | `brew install`, or a `distrobox`/`toolbox` container | Bazzite ships Homebrew; neither touches the host image |
+| a one-off build | `toolbox enter` | where `gcc` lives, if the host has none |
+| something that must be part of the OS | `rpm-ostree install` | **last resort** |
+
+**`rpm-ostree install` is a real commitment, not an install.** It layers the
+package onto a new deployment, which means a **reboot** before it exists, a slower
+rebase on every future update, and a thing that can block an update outright if it
+conflicts. Four packages are layered here and each earns it by needing kernel or
+system access a container cannot give: `coolercontrol`, `lact`, `liquidctl`,
+`gamescope-session-steam`. Do not add a fifth to save typing `flatpak`.
+
+**Never layer a package without telling the user it means a reboot**, and never
+reboot on your own initiative. `00-prerequisites/install.sh` deliberately only
+prints the command for this reason.
+
+**Bazzite already ships most of what a gaming setup wants** — MangoHud, GOverlay,
+gamescope, Steam, Proton, `vkbasalt`, `mesa-vulkan`. Check before installing:
+
+```bash
+rpm -q <pkg>              # in the image, or layered
+command -v <tool>
+rpm-ostree status         # what is layered, and on which deployment
+```
+
+**What is writable, and what follows you between deployments:**
+
+| Path | |
+|---|---|
+| `/usr` | **read-only.** Never write here |
+| `/etc` | writable, but **per-deployment** — each deployment has its own copy, snapshotted when it was created. Roll back or forward and your change is gone, silently |
+| `/var` (so `/home`, and `/usr/local` via a symlink) | writable and **shared** by all deployments |
+
+That `/etc` behaviour is not theoretical: it is how a LACT undervolt profile
+disappeared after a reboot here, leaving a 164-byte stub with
+`current_profile: null` and no error anywhere. After any `rpm-ostree rollback` or
+`upgrade`, re-run the installers that write to `/etc` — `00`, `01` and `08`.
+
+**`uupd.timer` updates the system automatically** at 04:00, with
+`Persistent=true`, so it catches up on missed runs. If you are testing anything
+driver- or deployment-dependent, disable it first and **tell the user you have**,
+because an overnight update will silently invalidate the test:
+
+```bash
+sudo systemctl disable --now uupd.timer      # and re-enable when done
+```
 
 ---
 
@@ -79,6 +156,92 @@ Then the parts a script cannot check, which need a human at the keyboard:
 - press Pause/Break, confirm the screens blank and come back
 - click each display-profile launcher
 - left-click the DLSS tray icon and confirm the icon changes
+
+---
+
+## HDR policy — washed-out colours are the default failure, not a bug you found
+
+HDR is the single most common way a Linux gaming setup looks worse than the Windows
+one it replaced, and the symptom is always the same: **washed-out, flat colours**
+with HDR apparently "on". People give up over this and go back to Windows. The
+cause is almost never the monitor.
+
+**What is actually happening.** The screen is in HDR mode, the game is handing the
+compositor an SDR image, and the compositor is stretching SDR into an HDR container.
+So you get HDR's lower contrast handling with none of its range. On this setup the
+specific trap is XWayland: **a Proton game on XWayland cannot do HDR**, the
+compositor tone-maps its SDR output into the HDR screen, and the game reports the
+monitor as having no HDR support at all. That is exactly what Hunt did here.
+
+**The four things that must all be true**, in the order worth checking:
+
+1. **The output is in HDR mode in KWin.** Per-output, not global. Verified state
+   here: `DP-4` (the AOC) has `highDynamicRange: true` and `wideColorGamut: true`;
+   `HDMI-A-2` (the TV) and `HDMI-A-3` (the Dell) are both **false**. So a game
+   moved to the TV loses HDR and nothing announces it. System Settings → Display →
+   per screen, or read `~/.config/kwinoutputconfig.json`.
+2. **The game presents through Wayland, not XWayland.** `PROTON_ENABLE_WAYLAND=1`
+   **and** `PROTON_ENABLE_HDR=1` — both, in `03-dlss-presets`' `95-gaming.conf`.
+   `PROTON_ENABLE_HDR` sets `DXVK_HDR=1` internally.
+3. **Proton GE or EM, per game.** Stock Valve Proton ignores both variables
+   entirely. Steam → game → Properties → Compatibility. This is the step that is
+   most often missed, because the environment looks correct.
+4. **SDR brightness and gamut wideness are sane.** `sdrBrightness` and
+   `sdrGamutWideness` in KWin decide how SDR content is mapped while the screen is
+   in HDR mode. Here: 450 nits / wideness 1 on `DP-4`. Set badly, *everything* looks
+   washed out — including the desktop, which is a useful thing to check, because a
+   washed-out desktop means the problem is not the game.
+
+**Then check the game.** `dlss overlay on` and the MangoHud overlay tell you what
+the GPU is doing, but not whether the swapchain is HDR. Note that **some games
+have no HDR setting at all** (CS2 is the usual example) and some detect HDR badly
+and will tell you the monitor is not compatible when it is. A game refusing to see
+HDR is a data point about the game, not proof the system is broken.
+
+**Many games' own HDR is poor even when it works.** That is what `10-nvtruehdr`
+exists for — an SDR→HDR Vulkan layer, and the better path for a title with no HDR
+or a bad implementation. RenoDX and Luma Framework are the same idea from the mod
+side; `~/RHI` is the installer for those here.
+
+### Third-party reports, recorded but NOT verified here
+
+These come from a user report, not from this machine. Treat them as leads, and
+**check the version before acting on any of them** — a fix or a regression may have
+landed since.
+
+- **gamescope HDR regression.** A report of washed-out colours in all HDR games on
+  KDE with gamescope 3.16.16–3.16.18, with 3.16.15 named as the last good version,
+  and disagreement about whether the fault is gamescope's or KDE's
+  (ValveSoftware/gamescope issue #2018). This machine runs
+  **3.16.19-128-g7282613+**, which is *newer than any version in that report*, and
+  gamescope here is part of the Bazzite image rather than a layered package — so
+  downgrading it is not a `dnf downgrade`, it is a deployment-level change. Do not
+  attempt it to chase a bug nobody has reproduced here.
+- **`ENABLE_HDR_WSI=1`.** Widely repeated as the NVIDIA HDR launch option, but it
+  is the switch for the **`vk_hdr_layer`** Vulkan layer, and that layer is **not
+  installed here** — `/usr/share/vulkan/implicit_layer.d/` and
+  `~/.local/share/vulkan/implicit_layer.d/` contain nvtruehdr, fossilize and the
+  Steam overlay, and no HDR WSI layer. Setting the variable with no layer to
+  consume it does nothing. If HDR is failing on a *native Wayland* path, this is not
+  the fix; if you install `vk_hdr_layer`, it becomes relevant.
+- **KDE over GNOME for HDR**, and **KDE tone-mapping off**. Consistent with how
+  this machine is set up; KDE is what it runs.
+
+### Rules
+
+**Do not change HDR settings to "try things".** Each of the four conditions above
+is observable; read the state first and change one thing at a time. A blind sweep
+of environment variables is how a working setup becomes a broken one with no record
+of what moved.
+
+**Do not add `ENABLE_HDR_WSI=1`, or any other variable from a forum post, to
+`95-gaming.conf` without saying so.** That file is the environment every Proton
+game inherits. An unexplained variable in it outlives whoever added it.
+
+**`PROTON_ENABLE_WAYLAND=1` has a known cost here**: it is why Hunt jumps to the
+desktop on launch, which `11-game-window-fixes` works around with a KWin rule.
+Turning Wayland off cures the jump and loses HDR. That trade-off was made
+deliberately — do not quietly reverse it.
 
 ---
 

@@ -12,7 +12,11 @@ change it, and what will bite you.
 
 **Setting this up on a new machine, by hand or with an agent?** Start with
 [`AGENTS.md`](AGENTS.md) — the procedure, the rules about what must not be
-automated, and what genuinely needs a human. Then `./preflight.sh`.
+automated, and what genuinely needs a human. It opens with two policy sections
+worth reading even if you are doing this by hand: **Bazzite** (immutable Fedora
+Atomic — `dnf` is not the package manager, `/etc` is per-deployment) and **HDR**
+(why colours come out washed out, and which of the advice online actually applies
+here). Then `./preflight.sh`.
 
 Built for: Bazzite 44 (Fedora Kinoite 44, KDE Plasma 6.6 Wayland), Ryzen 7 9800X3D,
 RTX 5090 ROG Astral OC (`10de:2b85` / `1043:89e3`), SAPPHIRE NITRO+ B850M WIFI.

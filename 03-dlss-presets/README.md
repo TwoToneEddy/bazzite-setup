@@ -76,3 +76,9 @@ settings as a per-game launch-option string if you want one title to differ.
 **`PROTON_ENABLE_WAYLAND=1` is also the cause of Hunt's jump to the desktop on
 launch** (see `11-game-window-fixes`). Turning it off cures that at the cost of
 HDR.
+
+**Do not add HDR variables here from a forum post.** The two in this file are the
+two that do something on this configuration. `ENABLE_HDR_WSI=1`, the one most often
+suggested for NVIDIA, drives the `vk_hdr_layer`, which is not installed here, so it
+does nothing. The full checklist for HDR that is not working is in
+[`../AGENTS.md`](../AGENTS.md#hdr-policy--washed-out-colours-are-the-default-failure-not-a-bug-you-found).

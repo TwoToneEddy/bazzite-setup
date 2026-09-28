@@ -67,6 +67,35 @@ cd ~/nvtruehdr && git pull && ./install.sh
 Per-game profiles are sections in that file; `nvtruehdr --help` lists the
 commands.
 
+## When HDR does not work at all
+
+Before suspecting this layer, work through the four conditions in
+[`../AGENTS.md`](../AGENTS.md#hdr-policy--washed-out-colours-are-the-default-failure-not-a-bug-you-found):
+the output in HDR mode in KWin, the game on Wayland rather than XWayland, Proton
+GE/EM selected for that game, and sane SDR brightness. Washed-out colours mean SDR
+content being stretched into an HDR container, which nvtruehdr cannot fix because it
+is upstream of the problem.
+
+Quick orientation:
+
+```bash
+# which outputs are in HDR mode - per output, not global
+grep -oE '"(connectorName|highDynamicRange|wideColorGamut|sdrBrightness)": [^,]*' \
+    ~/.config/kwinoutputconfig.json
+
+# what a running game actually inherited, which is not always what the file says
+pid=$(pgrep -n -f '\.exe'); tr '\0' '\n' < /proc/$pid/environ | grep -iE 'HDR|WAYLAND'
+```
+
+Verified state here: HDR is on for `DP-4` only. The TV (`HDMI-A-2`) and the Dell
+(`HDMI-A-3`) both have `highDynamicRange: false`, so a game moved to either loses
+HDR silently.
+
+**`ENABLE_HDR_WSI=1` is not the fix on this machine**, despite how often it is
+suggested. It switches on the `vk_hdr_layer`, which is not installed here — the
+only HDR-related Vulkan layer present is nvtruehdr's own. With no layer to consume
+it, the variable does nothing.
+
 ## Traps
 
 **HDR only reaches a Proton game through Wayland directly.** Both
