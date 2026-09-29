@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # Install display-profile, its launchers and icons, and the login-screen layout.
+# The launchers are also put on the desktop and pinned to the taskbar.
 set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
 
@@ -10,6 +11,13 @@ back_up "$HOME/.config/kwinoutputconfig.json"
 back_up /var/lib/plasmalogin/.config/kwinoutputconfig.json
 install_tree
 refresh_desktop_caches
+
+launchers=(display-profile-gaming.desktop display-profile-work.desktop
+           display-profile-tv.desktop display-profile-dell.desktop)
+say "launchers on the desktop"
+add_to_desktop "${launchers[@]}"
+say "launchers on the taskbar"
+pin_launchers "${launchers[@]}"
 
 say "outputs this machine actually has"
 kscreen-doctor -o 2>/dev/null | grep -E 'Output|Modes' | sed 's/^/        /' | head -20 || true

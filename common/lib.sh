@@ -167,3 +167,67 @@ qdbus_cmd() {
     done
     return 1
 }
+
+# pin_launchers <file.desktop>... - add launchers to the taskbar, if missing.
+#
+# Appends any of the named launchers that are not already on the first Icons-Only
+# Task Manager's launchers= line (the one 09-taskbar records). plasmashell keeps
+# its own copy of that file and writes it back over an edit made while it runs,
+# so it is stopped first and started after - never edited live. Does nothing, and
+# does not touch plasmashell, when every launcher is already pinned.
+pin_launchers() {
+    local rc="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
+    local live new l missing=() was_running=0
+    if [ ! -w "$rc" ] || ! live=$(grep -m1 '^launchers=' "$rc"); then
+        warn "no taskbar launcher row found in $rc - pin from the app menu instead"
+        return 0
+    fi
+    for l in "$@"; do
+        case ",${live#launchers=}," in
+            *",applications:$l,"*) skip "pinned        $l" ;;
+            *) missing+=("applications:$l") ;;
+        esac
+    done
+    [ "${#missing[@]}" -gt 0 ] || return 0
+
+    new="$live"
+    for l in "${missing[@]}"; do
+        if [ "$new" = "launchers=" ]; then new="launchers=$l"; else new="$new,$l"; fi
+    done
+    if [ "${DRY_RUN:-0}" = 1 ]; then
+        printf '  would  stop plasmashell, pin %s, start plasmashell\n' "${missing[*]}"
+        return 0
+    fi
+
+    if systemctl --user is-active -q plasma-plasmashell.service; then
+        was_running=1
+    elif pgrep -x plasmashell >/dev/null; then
+        warn "plasmashell is running outside systemd, so it cannot be stopped safely"
+        warn "pin these from the app menu instead: ${missing[*]}"
+        return 0
+    fi
+
+    back_up "$rc"
+    [ "$was_running" = 0 ] || systemctl --user stop plasma-plasmashell.service
+    awk -v new="$new" '!done && /^launchers=/ { print new; done=1; next } { print }' \
+        "$rc" >"$rc.tmp.$$" && cat "$rc.tmp.$$" >"$rc"
+    rm -f "$rc.tmp.$$"
+    [ "$was_running" = 0 ] || systemctl --user start plasma-plasmashell.service
+    for l in "${missing[@]}"; do ok "pinned        ${l#applications:}"; done
+}
+
+# add_to_desktop <file.desktop>... - copy launchers from ~/.local/share/applications
+# onto the desktop. Executable, because Plasma refuses to run an untrusted one.
+add_to_desktop() {
+    local dir l src
+    dir=$(xdg-user-dir DESKTOP 2>/dev/null || echo "$HOME/Desktop")
+    for l in "$@"; do
+        src="$HOME/.local/share/applications/$l"
+        [ "${DRY_RUN:-0}" = 1 ] || [ -e "$src" ] || { warn "no launcher $src"; continue; }
+        if [ -x "$dir/$l" ] && cmp -s "$src" "$dir/$l"; then
+            skip "unchanged     $dir/$l"
+            continue
+        fi
+        run install -D -m 755 "$src" "$dir/$l" && ok "installed     $dir/$l"
+    done
+}

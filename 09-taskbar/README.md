@@ -28,7 +28,9 @@ Only one line matters.
 
 The launchers themselves are `.desktop` files in `~/.local/share/applications/`,
 installed by whichever component owns them. This component only sets the order and
-which of them are pinned.
+which of them are pinned. `01-displays` pins its own four itself (appending them,
+using `pin_launchers` in `common/lib.sh`), so they are on the taskbar after stage 1
+even without this component; this one then sets the recorded order.
 
 ## How to change it
 

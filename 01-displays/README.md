@@ -10,6 +10,8 @@ artwork.
 |---|---|
 | `~/.local/bin/display-profile` | the command |
 | `~/.local/share/applications/display-profile-{gaming,work,tv,dell}.desktop` | four launchers |
+| `~/Desktop/display-profile-*.desktop` | the same four, on the desktop (executable, so Plasma trusts them) |
+| taskbar | the four are appended to the Icons-Only Task Manager if not already pinned — plasmashell is stopped for the edit and started again, see `09-taskbar` for why |
 | `~/.local/share/icons/hicolor/*/apps/display-profile-*.png` | the Windows icons; `dell` was drawn to match |
 | `~/.config/kwinoutputconfig.json` | the saved layout for your session |
 | `~/.local/bin/window-info` | opens KWin's debug console — how you find a window's class |
