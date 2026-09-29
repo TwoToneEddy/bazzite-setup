@@ -16,7 +16,7 @@ to reproduce the setup is to talk to it — which is what the Python script does
 `config.toml` is here so you can read what the result looks like and diff against
 it, not to be dropped into `/etc`.
 
-Needs `coolercontrol` layered and `nct6775` loaded — both from `00-prerequisites`.
+Needs `coolercontrol` layered and `nct6775` loaded — both from `04-prerequisites`.
 
 ## The curves
 
@@ -87,7 +87,7 @@ back over `coolercontrol-config.toml.reference` when you do.
 
 **Without `nct6775` there are no motherboard fan sensors at all**, and
 CoolerControl will show only the GPU and the AIO. That module is not autoloaded on
-this board; `00-prerequisites` is what loads it. If the fan channels are missing,
+this board; `04-prerequisites` is what loads it. If the fan channels are missing,
 check `sensors | grep nct6799` before suspecting CoolerControl.
 
 **Channel names are board-specific.** `fan1`…`fan7` are this board's NCT6799D

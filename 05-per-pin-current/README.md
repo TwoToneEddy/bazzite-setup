@@ -1,4 +1,4 @@
-# 01 — 12V-2x6 per-pin current sensing (`astral-pins`)
+# 05 — 12V-2x6 per-pin current sensing (`astral-pins`)
 
 All six per-pin currents from the RTX 5090 ROG Astral's own shunt sensor, live in
 the overlay, with an audible alarm if any single pin goes over the limit. This is
@@ -17,8 +17,9 @@ useful, and `astral-pins --probe` will tell you so.
 | `/usr/local/bin/astral-pins` | built from it by `install.sh` |
 | `/usr/local/bin/astral-pins-alarm` | what the daemon runs when a pin goes over |
 | `/etc/systemd/system/astral-pins.service` | the daemon, warn-only |
+| `~/.config/MangoHud/bazzite-setup.d/50-pins.conf` | the overlay's six 12V-2x6 rows, joined into `MangoHud.conf`; see `02-mangohud-overlay` |
 
-Needs `00-prerequisites` first, for `i2c-dev`.
+Needs `04-prerequisites` first, for `i2c-dev`.
 
 ## How it works
 

@@ -12,7 +12,7 @@ moment it launches**, and you have to click the game window to get back into it.
 ## The rule
 
 It forces focus and activation on Hunt's window when it appears. The cause is
-`PROTON_ENABLE_WAYLAND=1` (`03-dlss-presets`): the game creates its Wayland surface
+`PROTON_ENABLE_WAYLAND=1` (`00-gaming-env`): the game creates its Wayland surface
 and KWin does not treat the new surface as focus-stealing-exempt, so focus stays
 where it was — on the desktop.
 
@@ -30,7 +30,7 @@ no error. To find the real class of any window:
 window-info        # opens KWin's debug console; click the window
 ```
 
-`window-info` is installed by `05-display-switching`.
+`window-info` is installed by `01-displays`.
 
 **`kwinrulesrc` is the whole rules file, not just this rule.** Installing it
 replaces any rules you have added since. A `.bak-bazzite-setup` copy is kept, and

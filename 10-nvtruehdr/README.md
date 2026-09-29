@@ -100,7 +100,7 @@ it, the variable does nothing.
 
 **HDR only reaches a Proton game through Wayland directly.** Both
 `PROTON_ENABLE_WAYLAND=1` and `PROTON_ENABLE_HDR=1` are needed, and both are in
-`03-dlss-presets`' `95-gaming.conf`. On XWayland the compositor tone-maps the
+`00-gaming-env`' `95-gaming.conf`. On XWayland the compositor tone-maps the
 game's SDR output into the HDR screen instead, and the game reports the monitor as
 having no HDR support at all.
 

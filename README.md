@@ -26,17 +26,20 @@ outputs by name. Those are the places to look first on different hardware.
 
 ## The components
 
+Each component depends only on lower-numbered ones. `00`–`03` are **stage 1** — the
+basics, with nothing layered and no reboot; everything from `04` on is stage 2.
+
 | Directory | What it gives you | Hardware-specific? |
 |---|---|---|
-| [`00-prerequisites`](00-prerequisites/) | layered packages and the two kernel modules everything else needs | board sensor chip |
-| [`01-per-pin-current`](01-per-pin-current/) | all six 12V-2x6 pin currents off the Astral's own sensor, with an alarm | **yes** — Astral only |
-| [`02-mangohud-overlay`](02-mangohud-overlay/) | the Afterburner-matched in-game overlay, `/` to toggle | GPU PCI address |
-| [`03-dlss-presets`](03-dlss-presets/) | `dlss` — SR / RR / MFG presets and DLL version, per-system or per-game | no |
-| [`04-dlss-debug-overlay`](04-dlss-debug-overlay/) | tray icon that toggles NVIDIA's DLSS indicator and shows its state | no |
-| [`05-display-switching`](05-display-switching/) | `display-profile` — four monitor layouts, on the taskbar and desktop | **yes** — output names |
+| [`00-gaming-env`](00-gaming-env/) | the environment every Steam game inherits — the Proton HDR switches, `MANGOHUD=1` — and `dlss`: SR / RR / MFG presets and DLL version | no |
+| [`01-displays`](01-displays/) | `display-profile` — four monitor layouts, on the taskbar and desktop — and HDR per screen | **yes** — output names |
+| [`02-mangohud-overlay`](02-mangohud-overlay/) | the Afterburner-matched in-game overlay, `/` to toggle, with the FPS limiter | GPU PCI address |
+| [`03-dlss-debug-overlay`](03-dlss-debug-overlay/) | tray icon that toggles NVIDIA's DLSS indicator and shows its state | no |
+| [`04-prerequisites`](04-prerequisites/) | layered packages and the two kernel modules the rest of stage 2 needs | board sensor chip |
+| [`05-per-pin-current`](05-per-pin-current/) | all six 12V-2x6 pin currents off the Astral's own sensor, with an alarm, and their overlay rows | **yes** — Astral only |
 | [`06-displays-sleep`](06-displays-sleep/) | Pause/Break blanks the displays | no |
 | [`07-fan-control`](07-fan-control/) | the Windows FanControl curves, ported to CoolerControl | **yes** — channel names |
-| [`08-gpu-undervolt`](08-gpu-undervolt/) | LACT, and the undervolt profile itself | **yes** — silicon-specific |
+| [`08-gpu-undervolt`](08-gpu-undervolt/) | LACT, the undervolt profile itself, and the overlay's VOLTAGE row | **yes** — silicon-specific |
 | [`09-taskbar`](09-taskbar/) | the panel launcher row, and the only safe way to edit it | no |
 | [`10-nvtruehdr`](10-nvtruehdr/) | SDR→HDR Vulkan layer (lives in its own git repo) | no |
 | [`11-game-window-fixes`](11-game-window-fixes/) | the KWin rule that stops Hunt dropping to the desktop | no |
@@ -65,11 +68,10 @@ cd ~/bazzite-setup
 ./reference/health-check.sh     # confirm things are RUNNING, not just installed
 ```
 
-**Or just the basics first.** `./stage1.sh` installs HDR, display switching,
-the MangoHud overlay with its FPS limiter, and the DLSS indicator toggle — `02`
-to `05`, nothing layered, no reboot. The overlay goes in without the 12V-2x6 and
-VOLTAGE rows, which need `01` and `lact`. `./install-all.sh` later is stage 2 and
-puts the full overlay back.
+**Or just the basics first.** `./stage1.sh` installs stage 1 — HDR, display
+switching, the MangoHud overlay with its FPS limiter, and the DLSS indicator
+toggle — with nothing layered and no reboot. The 12V-2x6 and VOLTAGE overlay rows
+arrive with `05` and `08` in stage 2.
 
 **Or let an agent walk you through it.** `CLAUDE.md` and the `/setup` command are
 in the repo, so they arrive with the clone:
@@ -88,7 +90,7 @@ edit the Plasma panel config live, or reboot.
 Only five values genuinely move between machines — the GPU's PCI address, its LACT
 id, the monitor connectors, the fan channel names and the board's sensor module.
 `preflight.sh` finds all five and `AGENTS.md` tabulates where each one lives.
-Components `03`, `04`, `06`, `09`, `10`, `11` and `12` port with no changes at all.
+Components `00`, `03`, `06`, `09`, `10`, `11` and `12` port with no changes at all.
 
 One component lives elsewhere on purpose: **nvtruehdr** is its own repository at
 <https://github.com/TwoToneEddy/nvtruehdr>, and `10-nvtruehdr/install.sh` clones
@@ -96,9 +98,9 @@ and builds it.
 
 ## Installing
 
-Order matters only for `00-prerequisites`, which must go first, and
-`01-per-pin-current`, which wants `i2c-dev` loaded. Everything else is
-independent — install just the pieces you want.
+Components are numbered in dependency order, so `./install-all.sh` is always
+right. `04-prerequisites` has to come before `05`, `07` and `08`, which need its
+packages and modules; otherwise install just the pieces you want.
 
 ```bash
 cd bazzite-setup
@@ -127,17 +129,23 @@ NN-name/
     system/...     installed under /, paths mirrored, needs sudo
 ```
 
-So `files/home/.config/MangoHud/MangoHud.conf` lands at
-`~/.config/MangoHud/MangoHud.conf`, and
+So `files/home/.config/environment.d/95-gaming.conf` lands at
+`~/.config/environment.d/95-gaming.conf`, and
 `files/system/etc/systemd/system/astral-pins.service` at
 `/etc/systemd/system/astral-pins.service`. Adding a file to a component is just
 putting it at the right place in that tree — `install.sh` walks it, nothing
 lists filenames twice.
 
+One file is the exception: `MangoHud.conf` is assembled from pieces that several
+components install into `~/.config/MangoHud/bazzite-setup.d/`, so each overlay row
+belongs to the component that feeds it. See `02-mangohud-overlay`.
+
 ## Refreshing this directory from the live system
 
 These files are copies, not symlinks, so a change made live (editing
-`MangoHud.conf` in place, say) does not appear here until you copy it back.
+`95-gaming.conf` in place, say) does not appear here until you copy it back. A
+change to the live `MangoHud.conf` belongs in the piece it came from, under
+`~/.config/MangoHud/bazzite-setup.d/` and then in `NN-*/files/`.
 `~/.local/bin/gaming-config-snapshot` collects the same set into a flat mirror
 if you want a second opinion on what has drifted; to see what has:
 
@@ -166,4 +174,4 @@ file that lands in `/etc` is present only on the deployment you installed it on.
 Roll back or roll forward and it is gone, silently, while everything under
 `files/home` follows you. That is how a LACT undervolt profile disappeared once.
 After any `rpm-ostree rollback` or `upgrade`, re-run the installers that have a
-`files/system/etc` tree: `00`, `01` and `08`.
+`files/system/etc` tree: `04`, `05` and `08`.

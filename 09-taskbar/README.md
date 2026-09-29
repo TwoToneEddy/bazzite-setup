@@ -23,7 +23,7 @@ Only one line matters.
 | Lutris | |
 | **Discord** | the flatpak |
 | Chrome | the flatpak |
-| **Desk Gaming / Desk Work / TV Mode / Dell Only** | the four `display-profile` layouts (`05`) |
+| **Desk Gaming / Desk Work / TV Mode / Dell Only** | the four `display-profile` layouts (`01`) |
 | Konsole, Files, Bazaar, yafti | |
 
 The launchers themselves are `.desktop` files in `~/.local/share/applications/`,
@@ -61,7 +61,7 @@ applet, and forcing it by removing and re-adding entries left the panel showing 
 single blank placeholder. Both were tried. Stop the shell, edit the file, start the
 shell.
 
-**Do not pin `dlss-overlay-toggle.desktop` here.** See `04-dlss-debug-overlay` —
+**Do not pin `dlss-overlay-toggle.desktop` here.** See `03-dlss-debug-overlay` —
 a pinned launcher cannot show live state, and having both it and the tray icon
 means two controls that disagree.
 

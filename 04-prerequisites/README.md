@@ -1,7 +1,8 @@
-# 00 — Prerequisites
+# 04 — Prerequisites
 
-Two kernel modules and four layered packages. Nothing else in `bazzite-setup`
-works without these, so this goes first.
+Two kernel modules and four layered packages, for stage 2: `05`, `07` and `08`
+need them. Stage 1 (`00`–`03`) does not, so this is the first component that
+means a reboot.
 
 ## What it installs
 
@@ -24,7 +25,7 @@ sudo systemctl reboot
 | Package | For |
 |---|---|
 | `coolercontrol` | fan control (`07`) |
-| `lact` | GPU undervolt and the voltage reading the overlay uses (`08`, `02`) |
+| `lact` | GPU undervolt, and the voltage reading the overlay uses (`08`) |
 | `liquidctl` | lets CoolerControl see AIO pumps |
 | `gamescope-session-steam` | the SteamOS-style Game Mode session at the login screen |
 

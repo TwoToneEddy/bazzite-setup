@@ -37,11 +37,10 @@ adaptation comes before installation.
 ## Step 2 — pick the next component
 
 If `$ARGUMENTS` names one, go there. Otherwise take the first component that is not
-`ok`, in numeric order, respecting these dependencies:
-
-```
-00 before everything · 01 before 02's pin rows · 03 before 02's MANGOHUD and 04
-```
+`ok`, in numeric order. Components depend only on lower numbers, so numeric order
+is dependency order. `00`–`03` are stage 1 and need nothing layered; if the user
+only wants the basics, stop after `03`. `04` layers packages and needs a reboot
+before `05`, `07` and `08` can work.
 
 Ask the user to confirm before each component, and let them skip. A skipped
 component is a legitimate outcome — `absent` is not a failure.
@@ -59,7 +58,7 @@ component is a legitimate outcome — `absent` is not a failure.
    — a component can install perfectly and do nothing.
 6. **Hand back anything a script cannot do**, quoting the installer's own warning
    rather than paraphrasing it. The likely ones: layering packages needs a reboot
-   (`00`); the CoolerControl password if one was set in its GUI (`07`); activating
+   (`04`); the CoolerControl password if one was set in its GUI (`07`); activating
    the undervolt, which you must **not** do yourself (`08`); arranging the panel
    (`09`).
 

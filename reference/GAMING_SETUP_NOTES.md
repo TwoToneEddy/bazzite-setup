@@ -6,6 +6,21 @@ evening, and Sun 13 Sep 2026 morning and afternoon.
 Machine: Bazzite 44 (Kinoite, KDE Plasma 6.6.4 Wayland), Ryzen 7 9800X3D,
 RTX 5090 ROG Astral OC (`1043:89e3`), SAPPHIRE NITRO+ B850M WIFI.
 
+> **Component numbers changed on 29 Sep 2026**, after these notes were written.
+> They now run in dependency order, with `00`–`03` as stage 1. Where the text below
+> uses an old name:
+>
+> | Old | New |
+> |---|---|
+> | `00-prerequisites` | `04-prerequisites` |
+> | `01-per-pin-current` | `05-per-pin-current` |
+> | `03-dlss-presets` | `00-gaming-env` |
+> | `04-dlss-debug-overlay` | `03-dlss-debug-overlay` |
+> | `05-display-switching` | `01-displays` |
+>
+> `MangoHud.conf` is now assembled from pieces, and the VOLTAGE row and its
+> `gpu-voltage` feed moved from `02` to `08`. See `02-mangohud-overlay/README.md`.
+
 **Everything asked for is done and tested.** Three things are deliberately left
 to you: the undervolt values, a live TV Mode test, and whether to try the
 gamescope Game Mode session (installed, waiting on a reboot).

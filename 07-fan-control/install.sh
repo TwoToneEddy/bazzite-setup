@@ -4,11 +4,11 @@ set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
 
 rpm -q coolercontrol >/dev/null 2>&1 \
-    || die "coolercontrol is not layered. See ../00-prerequisites."
+    || die "coolercontrol is not layered. See ../04-prerequisites."
 
 if ! matches "^nct6775" lsmod; then
     warn "nct6775 is not loaded, so the board fan channels will not exist."
-    warn "See ../00-prerequisites, or: sudo modprobe nct6775"
+    warn "See ../04-prerequisites, or: sudo modprobe nct6775"
 fi
 
 say "curve script"

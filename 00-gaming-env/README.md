@@ -1,8 +1,12 @@
-# 03 — DLSS version and presets (`dlss`)
+# 00 — Gaming environment and DLSS presets (`dlss`)
 
 Set the DLSS Super Resolution, Ray Reconstruction and Multi Frame Generation
 preset, and the DLSS DLL version, for every Proton game at once — or for one game
 at a time. This is the Linux equivalent of the NVIDIA App's DLSS override page.
+
+It is also the environment every Steam game inherits — `MANGOHUD=1` and the Proton
+HDR switches live in the same file — which is why it is component `00`: the
+overlay, the DLSS tray and HDR all depend on it.
 
 ## What it installs
 
@@ -20,7 +24,7 @@ dlss status                                   # what is set right now
 dlss sr K        dlss sr latest   dlss sr off  # Super Resolution preset (A-O)
 dlss rr latest                                 # Ray Reconstruction preset
 dlss mfg 4x      dlss mfg auto    dlss mfg off # Frame Gen / Multi Frame Gen
-dlss overlay on | off                          # NVIDIA's DLSS indicator (see 04)
+dlss overlay on | off                          # NVIDIA's DLSS indicator (see 03)
 dlss dlls                                      # opens DLSS Updater, for DLL versions
 dlss launch-options                            # the same settings for ONE game,
                                                #   to paste into Steam

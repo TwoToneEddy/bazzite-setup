@@ -4,10 +4,10 @@ set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
 
 if ! matches "^i2c_dev" lsmod; then
-    warn "i2c-dev is not loaded - install 00-prerequisites first, or: sudo modprobe i2c-dev"
+    warn "i2c-dev is not loaded - install 04-prerequisites first, or: sudo modprobe i2c-dev"
 fi
 
-say "source, alarm script and unit"
+say "source, alarm script, unit and overlay rows"
 install_tree
 
 say "building astral-pins"
@@ -47,3 +47,6 @@ if [ "${DRY_RUN:-0}" != 1 ]; then
         warn "/dev/shm/astral-pins not written yet - journalctl -u astral-pins -n 20"
     fi
 fi
+
+say "overlay rows"
+assemble_mangohud

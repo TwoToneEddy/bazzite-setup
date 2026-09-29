@@ -10,8 +10,26 @@ full set.
 |---|---|
 | `/etc/lact/config.yaml` | **the undervolt** — profiles, the V/F curve, clock and power limits |
 | `~/LACT-profile-UV1.json`, `~/LACT-profile-UV2.json` | exported profiles, for importing in the GUI |
+| `~/.local/bin/gpu-voltage` | publishes the GPU core voltage, read from LACT, for the overlay |
+| `~/.config/systemd/user/gpu-voltage.service` | runs the above |
+| `~/.config/MangoHud/bazzite-setup.d/20-voltage.conf` | the overlay's VOLTAGE row; see `02-mangohud-overlay` |
 
-Needs `lact` layered — `00-prerequisites`.
+Needs `lact` layered — `04-prerequisites`.
+
+## The overlay's VOLTAGE row
+
+It lives here rather than in `02` because it reads from `lactd`, which this
+component runs. MangoHud reads NVIDIA cards through NVML, and this driver has no
+voltage API — no voltage symbol in `libnvidia-ml.so.1` at all, and
+`nvidia-smi -q -d VOLTAGE` prints an empty section — so MangoHud's own
+`gpu_voltage` would be a permanent `0 mV`. LACT gets the figure through NvAPI, so
+`gpu-voltage.service` asks it once a second and publishes to
+`/dev/shm/gpu-voltage.mv`, which the overlay `cat`s. One stats query costs ~16 ms,
+fine once a second and absurd at the overlay's refresh rate, and Steam's container
+has no `lact` binary inside it.
+
+Installing this component adds the row to `MangoHud.conf`. That does not activate
+the undervolt.
 
 ## The profile
 
@@ -121,3 +139,17 @@ be leaving performance on the table, check this before blaming anything else.
 **Watch for Xid errors after any change**: `journalctl -k | grep -i xid`. An
 unstable undervolt shows up there, and zero Xids is how this one was cleared as a
 cause of an unrelated stutter.
+
+**The `lact cli` trap, which shipped a wrong voltage reading once.** `lact cli
+stats` with no `-g` silently selects GPU 0 — the Radeon iGPU — and prints *its*
+voltage and clocks with no warning. The numbers look perfectly plausible (~1170 mV
+while the 5090 was at 980 mV), which is exactly why it got past review. Always
+pass the GPU id, and note `-g` is a flag on `lact cli`, **not** on `stats`, so it
+goes *before* the subcommand:
+
+```bash
+lact cli -g 10DE:2B85-1043:89E3-0000:01:00.0 stats
+```
+
+`~/.local/bin/gpu-voltage` has the id at the top as `GPU_ID`; that is the line to
+change on other hardware. `lact cli list-gpus` prints the ids.

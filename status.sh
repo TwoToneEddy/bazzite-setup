@@ -69,6 +69,9 @@ every_file_installed() {
 active()      { systemctl is-active --quiet "$1"; }
 user_active() { systemctl --user is-active --quiet "$1"; }
 
+MANGO_CONF="$HOME/.config/MangoHud/MangoHud.conf"
+MANGO_PARTS="$HOME/.config/MangoHud/bazzite-setup.d"
+
 check() {
     local dir="$1" state detail
     FILES_TOTAL=0; FILES_MISSING=0
@@ -85,7 +88,22 @@ check() {
     # Files are in place. Now the part a file check cannot tell you.
     state=ok; detail="installed"
     case "$dir" in
-        00-prerequisites)
+        00-gaming-env)
+            if grep -q '^MANGOHUD=1' "$HOME/.config/environment.d/95-gaming.conf" 2>/dev/null; then
+                detail="$(command -v dlss >/dev/null && dlss overlay status 2>/dev/null | tr -s ' ' || echo configured)"
+            else state=partial; detail="95-gaming.conf has no MANGOHUD=1"; fi ;;
+        01-displays)
+            if command -v kscreen-doctor >/dev/null; then
+                detail="$(display-profile status 2>/dev/null | grep -c ON) output(s) on"
+            else state=partial; detail="no kscreen-doctor - KDE only"; fi ;;
+        02-mangohud-overlay)
+            if [ ! -r "$MANGO_CONF" ]; then state=partial; detail="MangoHud.conf not assembled - run its install.sh"
+            elif ! user_active gpu-peaks; then state=partial; detail="user service not active: gpu-peaks"
+            else detail="rows from: $(cd "$MANGO_PARTS" 2>/dev/null && echo *.conf), peak $(cat /dev/shm/gpu-peaks.temp 2>/dev/null)"; fi ;;
+        03-dlss-debug-overlay)
+            if pgrep -f dlss-overlay-tray >/dev/null; then detail="tray running (pid $(pgrep -f dlss-overlay-tray | head -1))"
+            else state=partial; detail="tray not running - start dlss-overlay-tray"; fi ;;
+        04-prerequisites)
             local miss=""
             for m in nct6775 i2c_dev; do
                 grep -q "^$m " <<<"$(lsmod)" || miss="$miss $m"
@@ -95,34 +113,12 @@ check() {
             done
             if [ -n "$miss" ]; then state=partial; detail="not loaded/layered:$miss"
             else detail="modules loaded, 4 packages layered"; fi ;;
-        01-per-pin-current)
+        05-per-pin-current)
             if [ ! -x /usr/local/bin/astral-pins ]; then state=partial; detail="binary not built"
             elif ! active astral-pins; then state=partial; detail="astral-pins.service not active"
             elif [ ! -r /dev/shm/astral-pins ]; then state=partial; detail="no reading published"
+            elif ! grep -q 'astral-pins\.pin1' "$MANGO_CONF" 2>/dev/null; then state=partial; detail="12V-2x6 rows not in MangoHud.conf - re-run 02-mangohud-overlay/install.sh"
             else detail="$(cat /dev/shm/astral-pins 2>/dev/null)"; fi ;;
-        02-mangohud-overlay)
-            # A STAGE1=1 install has no VOLTAGE row, so nothing needs gpu-voltage.
-            local bad="" conf="$HOME/.config/MangoHud/MangoHud.conf"
-            user_active gpu-peaks   || bad="$bad gpu-peaks"
-            if ! grep -q 'gpu-voltage\.mv' "$conf" 2>/dev/null; then
-                if [ -n "$bad" ]; then state=partial; detail="stage 1 overlay, user service not active:$bad"
-                else detail="stage 1 overlay (no pin/voltage rows), peak $(cat /dev/shm/gpu-peaks.temp 2>/dev/null)"; fi
-            else
-                user_active gpu-voltage || bad="$bad gpu-voltage"
-                if [ -n "$bad" ]; then state=partial; detail="user service not active:$bad"
-                else detail="feeds live: $(cat /dev/shm/gpu-voltage.mv 2>/dev/null), peak $(cat /dev/shm/gpu-peaks.temp 2>/dev/null)"; fi
-            fi ;;
-        03-dlss-presets)
-            if grep -q '^MANGOHUD=1' "$HOME/.config/environment.d/95-gaming.conf" 2>/dev/null; then
-                detail="$(command -v dlss >/dev/null && dlss overlay status 2>/dev/null | tr -s ' ' || echo configured)"
-            else state=partial; detail="95-gaming.conf has no MANGOHUD=1"; fi ;;
-        04-dlss-debug-overlay)
-            if pgrep -f dlss-overlay-tray >/dev/null; then detail="tray running (pid $(pgrep -f dlss-overlay-tray | head -1))"
-            else state=partial; detail="tray not running - start dlss-overlay-tray"; fi ;;
-        05-display-switching)
-            if command -v kscreen-doctor >/dev/null; then
-                detail="$(display-profile status 2>/dev/null | grep -c ON) output(s) on"
-            else state=partial; detail="no kscreen-doctor - KDE only"; fi ;;
         06-displays-sleep)
             if grep -q '^\[services\]\[displays-sleep.desktop\]' "$HOME/.config/kglobalshortcutsrc" 2>/dev/null; then
                 detail="bound to Pause"
@@ -134,6 +130,8 @@ check() {
             else state=partial; detail="curves not in CoolerControl - run its install.sh"; fi ;;
         08-gpu-undervolt)
             if ! active lactd; then state=partial; detail="lactd not active"
+            elif ! user_active gpu-voltage; then state=partial; detail="user service not active: gpu-voltage"
+            elif ! grep -q 'gpu-voltage\.mv' "$MANGO_CONF" 2>/dev/null; then state=partial; detail="VOLTAGE row not in MangoHud.conf - re-run 02-mangohud-overlay/install.sh"
             else
                 local cur; cur=$(sudo -n grep -m1 '^current_profile:' /etc/lact/config.yaml 2>/dev/null | awk '{print $2}')
                 if [ "${cur:-null}" = null ]; then state=partial; detail="profile defined but NOT active (current_profile: null)"

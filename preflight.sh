@@ -48,8 +48,8 @@ fi
 if command -v kscreen-doctor >/dev/null; then
     same "KDE Plasma present"
 else
-    gone "kscreen-doctor - components 05 and 06 are KDE-only and will not work"
-    fix "on GNOME or another desktop, 05 and 06 need rewriting against that desktop"
+    gone "kscreen-doctor - components 01 and 06 are KDE-only and will not work"
+    fix "on GNOME or another desktop, 01 and 06 need rewriting against that desktop"
 fi
 
 hdr "CPU and motherboard"
@@ -62,32 +62,32 @@ case "$live_cpu" in *"$CPU"*) same "CPU $live_cpu" ;; *) { diff_ "CPU: recorded 
 esac
 case "$MOTHERBOARD" in *"$live_mb"*) same "motherboard $live_mb" ;; *)
     diff_ "motherboard: recorded '$MOTHERBOARD', live '$live_mb'"
-    fix "00-prerequisites loads the nct6775 module for the $SUPERIO. Check yours:"
+    fix "04-prerequisites loads the nct6775 module for the $SUPERIO. Check yours:"
     fix "  sudo sensors-detect --auto   then edit files/system/etc/modules-load.d/" ;;
 esac
 
 hdr "GPU"
 live_vga=$(lspci -Dnn 2>/dev/null | grep -iE 'VGA|3D controller' | grep -i nvidia | head -1)
 if [ -z "$live_vga" ]; then
-    gone "no NVIDIA GPU found. Components 01, 02, 03, 04, 08 and 10 are all NVIDIA-specific."
+    gone "no NVIDIA GPU found. Components 00, 02, 03, 05, 08 and 10 are all NVIDIA-specific."
 else
     live_pci=${live_vga%% *}
     live_id=$(grep -oE '\[10de:[0-9a-f]{4}\]' <<<"$live_vga" | tr -d '[]' | head -1)
     note "live: $live_vga"
     [ "$live_pci" = "$GPU_PCI" ] && same "PCI address $live_pci" || {
         diff_ "PCI address: recorded $GPU_PCI, live $live_pci"
-        fix "02-mangohud-overlay/files/home/.config/MangoHud/MangoHud.conf -> pci_dev=$live_pci"
+        fix "02-mangohud-overlay/files/home/.config/MangoHud/bazzite-setup.d/10-overlay.conf -> pci_dev=$live_pci"
         fix "  (get it wrong and MangoHud silently drops the GPU and VRAM rows)"; }
     [ "$live_id" = "$GPU_PCI_ID" ] && same "GPU model $live_id" \
         || diff_ "GPU model: recorded $GPU_PCI_ID, live $live_id"
-    # The subsystem id is what makes this an Astral, which 01 depends on.
+    # The subsystem id is what makes this an Astral, which 05 depends on.
     live_sub=$(lspci -Dnnvm -s "$live_pci" 2>/dev/null | awk -F'\t' '/^SVendor|^SDevice/{print $2}' | tr '\n' ' ')
     if grep -qi 'asus\|1043' <<<"${live_sub:-}"; then
         same "ASUS board partner - the Astral pin sensor may be present"
     else
         diff_ "not an ASUS card ($live_sub)"
-        fix "01-per-pin-current is ROG Astral-only. Skip it, or run 'sudo astral-pins --probe'"
-        fix "  after building, and remove the 12V PINS rows from MangoHud.conf if absent"
+        fix "05-per-pin-current is ROG Astral-only. Skip it, or run 'sudo astral-pins --probe'"
+        fix "  after building - if nothing answers, skip it and its overlay rows go with it"
     fi
 fi
 if command -v lact >/dev/null; then
@@ -96,11 +96,11 @@ if command -v lact >/dev/null; then
         same "LACT id $live_lact"
     else
         diff_ "LACT id: recorded $GPU_LACT_ID, live ${live_lact:-none}"
-        fix "02-mangohud-overlay/files/home/.local/bin/gpu-voltage -> GPU_ID=\"$live_lact\""
+        fix "08-gpu-undervolt/files/home/.local/bin/gpu-voltage -> GPU_ID=\"$live_lact\""
         fix "  (with the wrong id, 'lact cli' reads the iGPU and prints plausible nonsense)"
     fi
 else
-    note "lact not installed yet - re-run this after 00-prerequisites to check the LACT id"
+    note "lact not installed yet - re-run this after 04-prerequisites to check the LACT id"
 fi
 
 hdr "displays"
@@ -114,12 +114,12 @@ if command -v kscreen-doctor >/dev/null; then
                 same "$var=$out, mode $mode available"
             else
                 diff_ "$var=$out is connected but has no $mode mode"
-                fix "05-display-switching/files/home/.local/bin/display-profile -> $var / mode"
+                fix "01-displays/files/home/.local/bin/display-profile -> $var / mode"
                 fix "  list what it does have: kscreen-doctor -o"
             fi
         else
             diff_ "$var=$out is not connected on this machine"
-            fix "05-display-switching/files/home/.local/bin/display-profile -> set $var"
+            fix "01-displays/files/home/.local/bin/display-profile -> set $var"
             fix "  connector names move with port and cable; match on the EDID id instead"
         fi
     done
@@ -140,7 +140,7 @@ if grep -qi "${SUPERIO%D}" <<<"$sensors_out"; then
 else
     diff_ "no $SUPERIO sensors. Either nct6775 is not loaded, or this board has another chip."
     fix "sudo modprobe nct6775, then re-run. Otherwise: sudo sensors-detect --auto"
-    fix "and set the right module in 00-prerequisites/files/system/etc/modules-load.d/"
+    fix "and set the right module in 04-prerequisites/files/system/etc/modules-load.d/"
 fi
 
 hdr "undervolt"

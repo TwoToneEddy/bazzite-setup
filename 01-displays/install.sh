@@ -15,7 +15,7 @@ say "outputs this machine actually has"
 kscreen-doctor -o 2>/dev/null | grep -E 'Output|Modes' | sed 's/^/        /' | head -20 || true
 
 say "outputs display-profile expects"
-grep -oE '"?(DP|HDMI|eDP)-[A-Z]?-?[0-9]+"?' "$HOME/.local/bin/display-profile" \
+grep -oE '"?(DP|HDMI|eDP)-[A-Z]?-?[0-9]+"?' "$COMPONENT_DIR/files/home/.local/bin/display-profile" \
     | tr -d '"' | sort -u | while read -r o; do
     if matches "$o" kscreen-doctor -o; then
         ok "connected     $o"

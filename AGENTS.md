@@ -58,7 +58,7 @@ system access a container cannot give: `coolercontrol`, `lact`, `liquidctl`,
 `gamescope-session-steam`. Do not add a fifth to save typing `flatpak`.
 
 **Never layer a package without telling the user it means a reboot**, and never
-reboot on your own initiative. `00-prerequisites/install.sh` deliberately only
+reboot on your own initiative. `04-prerequisites/install.sh` deliberately only
 prints the command for this reason.
 
 **Bazzite already ships most of what a gaming setup wants** — MangoHud, GOverlay,
@@ -81,7 +81,7 @@ rpm-ostree status         # what is layered, and on which deployment
 That `/etc` behaviour is not theoretical: it is how a LACT undervolt profile
 disappeared after a reboot here, leaving a 164-byte stub with
 `current_profile: null` and no error anywhere. After any `rpm-ostree rollback` or
-`upgrade`, re-run the installers that write to `/etc` — `00`, `01` and `08`.
+`upgrade`, re-run the installers that write to `/etc` — `04`, `05` and `08`.
 
 **`uupd.timer` updates the system automatically** at 04:00, with
 `Persistent=true`, so it catches up on missed runs. If you are testing anything
@@ -120,11 +120,11 @@ The five values that actually move between machines:
 
 | Value | File | Find it with |
 |---|---|---|
-| GPU PCI address | `02-*/files/home/.config/MangoHud/MangoHud.conf` → `pci_dev=` | `lspci -D \| grep -i vga` |
-| GPU id for LACT | `02-*/files/home/.local/bin/gpu-voltage` → `GPU_ID` | `lact cli list-gpus` |
-| monitor connectors and modes | `05-*/files/home/.local/bin/display-profile` → the `*_OUT` / `*_SIG` block near the top | `kscreen-doctor -o` |
+| GPU PCI address | `02-*/files/home/.config/MangoHud/bazzite-setup.d/10-overlay.conf` → `pci_dev=` | `lspci -D \| grep -i vga` |
+| GPU id for LACT | `08-*/files/home/.local/bin/gpu-voltage` → `GPU_ID` | `lact cli list-gpus` |
+| monitor connectors and modes | `01-*/files/home/.local/bin/display-profile` → the `*_OUT` / `*_SIG` block near the top | `kscreen-doctor -o` |
 | fan channel names | `07-*/files/home/.local/share/gaming-setup/apply-fan-curves.py` | the CoolerControl GUI |
-| sensor module | `00-*/files/system/etc/modules-load.d/` | `sudo sensors-detect --auto` |
+| sensor module | `04-*/files/system/etc/modules-load.d/` | `sudo sensors-detect --auto` |
 
 Then update `machine-profile.conf` to describe the new machine, so the next
 preflight is meaningful.
@@ -140,8 +140,13 @@ Installers are idempotent — re-running is safe and prints `unchanged` for anyt
 already correct. They stop at the first genuine failure rather than carrying on and
 leaving something half-built that looks finished.
 
-`00-prerequisites` will tell you to layer packages and reboot. That is a real
-interruption: layer them, reboot, then continue from `01`.
+The components are numbered so that each depends only on lower numbers. `00`–`03`
+are **stage 1** — HDR, display switching, the overlay with its FPS limiter, the DLSS
+indicator toggle — and need no layered package; `./stage1.sh` installs just those.
+Everything from `04` on is stage 2.
+
+`04-prerequisites` will tell you to layer packages and reboot. That is a real
+interruption: layer them, reboot, then run `./install-all.sh` again.
 
 ### 4. Verify
 
@@ -163,7 +168,7 @@ can install perfectly and do nothing.
 Then the parts a script cannot check, which need a human at the keyboard:
 
 - launch a game, press `/`, confirm the overlay appears with the GPU rows populated
-- press `Shift_L+F4` in game after any `MangoHud.conf` edit
+- press `Shift_L+F4` in game after anything reassembles `MangoHud.conf`
 - press Pause/Break, confirm the screens blank and come back
 - click each display-profile launcher
 - left-click the DLSS tray icon and confirm the icon changes
@@ -193,7 +198,7 @@ monitor as having no HDR support at all. That is exactly what Hunt did here.
    configured but not yet confirmed on the real TV. System Settings → Display →
    per screen, or read `~/.config/kwinoutputconfig.json`.
 2. **The game presents through Wayland, not XWayland.** `PROTON_ENABLE_WAYLAND=1`
-   **and** `PROTON_ENABLE_HDR=1` — both, in `03-dlss-presets`' `95-gaming.conf`.
+   **and** `PROTON_ENABLE_HDR=1` — both, in `00-gaming-env`' `95-gaming.conf`.
    `PROTON_ENABLE_HDR` sets `DXVK_HDR=1` internally.
 3. **Proton GE or EM, per game.** Stock Valve Proton ignores both variables
    entirely. Steam → game → Properties → Compatibility. This is the step that is
@@ -321,32 +326,42 @@ Say so plainly rather than working around these.
 
 ## Dependencies between components
 
-Only these; everything else is independent and can be installed alone.
+Only these; everything else is independent and can be installed alone. Every arrow
+points from a lower number to a higher one, so installing in number order always
+finds what each component needs.
 
 ```
-00-prerequisites ──> everything (packages, kernel modules)
-     └─ i2c-dev ──> 01-per-pin-current
-     └─ lact    ──> 02 (the VOLTAGE row) and 08
-01-per-pin-current ──> 02  (the 12V PINS rows read its /dev/shm files)
-03-dlss-presets    ──> 02  (MANGOHUD=1 lives in 95-gaming.conf)
-                   ──> 04  (the debug-overlay switch lives there too)
-05-display-switching ──> 11 (window-info, for finding a window class)
+00-gaming-env ──> 02  (MANGOHUD=1 lives in 95-gaming.conf)
+              ──> 03  (the debug-overlay switch lives there too)
+01-displays   ──> 11  (window-info, for finding a window class)
+02-mangohud-overlay ──> 05, 08  (they add their rows to its MangoHud.conf)
+04-prerequisites ──> 05, 07, 08  (packages, kernel modules)
+     └─ i2c-dev ──> 05-per-pin-current
+     └─ lact    ──> 08-gpu-undervolt, and with it the overlay's VOLTAGE row
 ```
+
+**The overlay is assembled, not copied.** MangoHud reads one file, but its rows
+belong to different components: `02` installs the base overlay, `05` the 12V-2x6
+rows, `08` the VOLTAGE row, each as a piece in `~/.config/MangoHud/bazzite-setup.d/`.
+Every one of those installers joins the pieces into `MangoHud.conf`. So a row exists
+only while its component is installed, and an edit to the live `MangoHud.conf` is
+lost at the next reassembly — edit the piece in `NN-*/files/` instead.
 
 If a component you depend on is absent, the dependent one degrades quietly rather
-than failing loudly — the `12V PINS` rows go blank, the `VOLTAGE` row reads `--`.
+than failing loudly — the overlay has no 12V-2x6 or VOLTAGE rows; if their
+component is installed but its feed is not running, the rows go blank.
 That is the behaviour to expect, not a bug to chase.
 
 ## Hardware that is genuinely specific
 
 | Component | Tied to |
 |---|---|
-| `01-per-pin-current` | **ROG Astral only.** The IT8915FN is not on other 5090s. Run `sudo astral-pins --probe`; if nothing answers, skip the component and delete the `12V PINS` rows from `MangoHud.conf`. |
-| `08-gpu-undervolt` | the individual card, not the model |
-| `05-display-switching` | connector names and monitor modes |
+| `05-per-pin-current` | **ROG Astral only.** The IT8915FN is not on other 5090s. Run `sudo astral-pins --probe`; if nothing answers, skip the component — its overlay rows go with it. |
+| `08-gpu-undervolt` | the individual card, not the model; and the GPU's LACT id |
+| `01-displays` | connector names and monitor modes |
 | `07-fan-control` | the board's sensor chip and channel names |
-| `02-mangohud-overlay` | the GPU's PCI address and LACT id |
-| `03`, `04`, `06`, `09`, `10`, `11`, `12` | nothing — these port as-is |
+| `02-mangohud-overlay` | the GPU's PCI address |
+| `00`, `03`, `06`, `09`, `10`, `11`, `12` | nothing — these port as-is |
 
 ## Reporting back
 

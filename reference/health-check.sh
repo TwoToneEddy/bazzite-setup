@@ -13,7 +13,26 @@ nvidia-smi --query-gpu=driver_version,name --format=csv,noheader 2>/dev/null \
     && pass "nvidia-smi answers" || fail "nvidia-smi"
 info "kernel $(uname -r)"
 
-hdr "00 prerequisites"
+hdr "00 gaming environment"
+command -v dlss >/dev/null && dlss status 2>/dev/null | sed 's/^/        /' || fail "dlss command missing"
+
+hdr "01 displays"
+command -v display-profile >/dev/null && display-profile status 2>/dev/null | sed 's/^/        /' \
+    || fail "display-profile missing"
+
+hdr "02 overlay"
+[ -r "$HOME/.config/MangoHud/MangoHud.conf" ] && pass "MangoHud.conf present" || fail "MangoHud.conf missing"
+info "rows from: $(cd "$HOME/.config/MangoHud/bazzite-setup.d" 2>/dev/null && echo *.conf)"
+systemctl --user is-active --quiet gpu-peaks && pass "gpu-peaks active" || fail "gpu-peaks not active"
+for f in /dev/shm/gpu-peaks.temp /dev/shm/gpu-peaks.power; do
+    [ -r "$f" ] && pass "$(basename "$f") = $(cat "$f")" || fail "$f missing"
+done
+
+hdr "03 DLSS overlay tray"
+pgrep -f dlss-overlay-tray >/dev/null && pass "tray running (pid $(pgrep -f dlss-overlay-tray | head -1))" \
+    || fail "tray not running"
+
+hdr "04 prerequisites"
 for m in nct6775 i2c_dev; do
     lsmod | grep -q "^$m" && pass "module $m loaded" || fail "module $m not loaded"
 done
@@ -22,7 +41,7 @@ for p in coolercontrol lact; do
         && pass "$p present" || fail "$p missing (rpm-ostree install $p)"
 done
 
-hdr "01 per-pin current"
+hdr "05 per-pin current"
 systemctl is-active --quiet astral-pins && pass "astral-pins active" || fail "astral-pins not active"
 if [ -r /dev/shm/astral-pins ]; then
     pass "reading: $(cat /dev/shm/astral-pins)"
@@ -31,32 +50,14 @@ else
 fi
 info "alarm level: $(grep -o -- '--warn [0-9.]*' /etc/systemd/system/astral-pins.service 2>/dev/null | head -1)"
 
-hdr "02 overlay"
-[ -r "$HOME/.config/MangoHud/MangoHud.conf" ] && pass "MangoHud.conf present" || fail "MangoHud.conf missing"
-for u in gpu-peaks gpu-voltage; do
-    systemctl --user is-active --quiet "$u" && pass "$u active" || fail "$u not active"
-done
-for f in /dev/shm/gpu-peaks.temp /dev/shm/gpu-peaks.power /dev/shm/gpu-voltage.mv; do
-    [ -r "$f" ] && pass "$(basename "$f") = $(cat "$f")" || fail "$f missing"
-done
-
-hdr "03 DLSS"
-command -v dlss >/dev/null && dlss status 2>/dev/null | sed 's/^/        /' || fail "dlss command missing"
-
-hdr "04 DLSS overlay tray"
-pgrep -f dlss-overlay-tray >/dev/null && pass "tray running (pid $(pgrep -f dlss-overlay-tray | head -1))" \
-    || fail "tray not running"
-
-hdr "05 displays"
-command -v display-profile >/dev/null && display-profile status 2>/dev/null | sed 's/^/        /' \
-    || fail "display-profile missing"
-
 hdr "07 fans"
 systemctl is-active --quiet coolercontrold && pass "coolercontrold active" || fail "coolercontrold not active"
 sensors 2>/dev/null | grep -q nct6799 && pass "board fan sensors visible" || fail "no nct6799 in sensors"
 
 hdr "08 undervolt"
 systemctl is-active --quiet lactd && pass "lactd active" || fail "lactd not active"
+systemctl --user is-active --quiet gpu-voltage && pass "gpu-voltage active" || fail "gpu-voltage not active"
+[ -r /dev/shm/gpu-voltage.mv ] && pass "gpu-voltage.mv = $(cat /dev/shm/gpu-voltage.mv)" || fail "/dev/shm/gpu-voltage.mv missing"
 if sudo test -r /etc/lact/config.yaml; then
     sudo grep -q 'profiles:' /etc/lact/config.yaml && pass "profiles present in config" \
         || fail "no profiles in /etc/lact/config.yaml - this deployment's /etc may have reset"

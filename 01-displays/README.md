@@ -1,4 +1,4 @@
-# 05 — Display switching (`display-profile`)
+# 01 — Display switching (`display-profile`)
 
 Four monitor layouts, one command, on the taskbar and the desktop. Port of the
 Windows `DisplaySwitch` scripts (`Switch-Display.ps1`), using your own `.ico`
@@ -37,6 +37,14 @@ constants.
 
 It drives `kscreen-doctor`, i.e. KWin's own output management, so the result is
 what the Display Configuration panel would have done, and it persists.
+
+## HDR is per screen, and lives here
+
+KWin turns HDR on per output, and `kwinoutputconfig.json` is where that is
+recorded: `highDynamicRange` and `wideColorGamut` are on for the AOC (`DP-4`) and
+the TV (`HDMI-A-2`), off for the Dell. A game on the Dell gets no HDR, and nothing
+says so. The rest of what HDR needs is in `00-gaming-env` and in the HDR policy in
+[`../AGENTS.md`](../AGENTS.md#hdr-policy--washed-out-colours-are-the-default-failure-not-a-bug-you-found).
 
 ## Refresh rate is re-pinned on every switch
 

@@ -62,22 +62,18 @@ _install_one() {
     ok "installed     $dst"
 }
 
-# install_tree [exclude-regex] - copy files/home -> $HOME and files/system -> /
-# Paths under files/ matching the optional extended regex are left out, for a
-# component that installs one of its files some other way.
+# install_tree - copy files/home -> $HOME and files/system -> /
 install_tree() {
-    local base="$COMPONENT_DIR/files" src rel exclude="${1:-}"
+    local base="$COMPONENT_DIR/files" src rel
     if [ -d "$base/home" ]; then
         while IFS= read -r src; do
             rel=${src#"$base/home/"}
-            [ -n "$exclude" ] && [[ "$rel" =~ $exclude ]] && continue
             _install_one "$src" "$HOME/$rel" ""
         done < <(find "$base/home" -type f | sort)
     fi
     if [ -d "$base/system" ]; then
         while IFS= read -r src; do
             rel=${src#"$base/system/"}
-            [ -n "$exclude" ] && [[ "$rel" =~ $exclude ]] && continue
             _install_one "$src" "/$rel" "sudo"
         done < <(find "$base/system" -type f | sort)
     fi
@@ -99,6 +95,42 @@ refresh_desktop_caches() {
         run update-desktop-database "$HOME/.local/share/applications" 2>/dev/null
     have kbuildsycoca6 && run kbuildsycoca6 --noincremental >/dev/null 2>&1
     ok "desktop and icon caches refreshed"
+}
+
+# assemble_mangohud - join the overlay pieces into MangoHud.conf.
+#
+# MangoHud reads one file, but its rows belong to different components: 02 owns
+# the base overlay, 05 the 12V-2x6 rows, 08 the VOLTAGE row. Each installs its
+# piece into bazzite-setup.d/ and calls this, so a row exists only when the
+# component that feeds it does. Pieces join in name order, which is on-screen
+# order. Does nothing until 02 has put the base piece in place.
+MANGOHUD_PARTS="$HOME/.config/MangoHud/bazzite-setup.d"
+assemble_mangohud() {
+    local conf="$HOME/.config/MangoHud/MangoHud.conf" tmp f first=1
+    if [ "${DRY_RUN:-0}" = 1 ]; then
+        printf '  would  assemble %s from %s/*.conf\n' "$conf" "$MANGOHUD_PARTS"
+        return 0
+    fi
+    if [ ! -e "$MANGOHUD_PARTS/10-overlay.conf" ]; then
+        skip "no base overlay yet - these rows appear once 02-mangohud-overlay is installed"
+        return 0
+    fi
+    tmp=$(mktemp)
+    {
+        echo "# Assembled by bazzite-setup from $MANGOHUD_PARTS/*.conf."
+        echo "# Edit those pieces, not this file: any installer that reassembles it"
+        echo "# overwrites a change made here. display-profile rewrites fps_limit=."
+        echo
+        for f in "$MANGOHUD_PARTS"/*.conf; do
+            [ "$first" = 1 ] || echo
+            first=0
+            cat "$f"
+        done
+    } >"$tmp"
+    back_up "$conf"
+    _install_one "$tmp" "$conf" ""
+    rm -f "$tmp"
+    ok "overlay rows from: $(cd "$MANGOHUD_PARTS" && echo *.conf)"
 }
 
 # enable_user_units <unit>... - reload, enable and start user services.

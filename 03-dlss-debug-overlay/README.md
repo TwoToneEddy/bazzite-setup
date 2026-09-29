@@ -1,4 +1,4 @@
-# 04 — DLSS debug overlay toggle (tray icon)
+# 03 — DLSS debug overlay toggle (tray icon)
 
 NVIDIA's own DLSS / DLSS-G debug indicator — the little text block that tells you
 which DLSS model and preset a game is really using — with a **system tray icon
@@ -16,7 +16,7 @@ that toggles it and shows its current state**. Port of Windows'
 | `~/.local/share/icons/hicolor/*/apps/dlss-overlay-{on,off}.png` | the Windows `.ico` artwork, all eight sizes |
 
 The underlying switch is `DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS` in
-`95-gaming.conf`, which `03-dlss-presets` installs. Install that first.
+`95-gaming.conf`, which `00-gaming-env` installs. Install that first.
 
 ## Using it
 

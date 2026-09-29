@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# Install the LACT config (the undervolt) and restart the daemon.
+# Install the LACT config (the undervolt), restart the daemon, and add the
+# overlay's VOLTAGE row, whose feed reads from that daemon.
 set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
 
-rpm -q lact >/dev/null 2>&1 || die "lact is not layered. See ../00-prerequisites."
+rpm -q lact >/dev/null 2>&1 || die "lact is not layered. See ../04-prerequisites."
 
 # The failure this component exists to prevent: a deployment's own /etc carrying a
 # stub config. Say plainly what is about to be replaced.
@@ -56,4 +57,25 @@ if [ "${DRY_RUN:-0}" != 1 ]; then
     n=$(journalctl -k --no-pager 2>/dev/null | grep -c 'NVRM: Xid' || true)
     [ "${n:-0}" = 0 ] && ok "no NVRM Xid errors this boot" \
         || warn "$n Xid errors - journalctl -k | grep 'NVRM: Xid'"
+fi
+
+say "the GPU id gpu-voltage asks LACT for"
+gid=$(grep -m1 '^GPU_ID' "$COMPONENT_DIR/files/home/.local/bin/gpu-voltage" | cut -d'"' -f2 || true)
+if [ -n "${gid:-}" ] && have lact; then
+    if matches "$gid" lact cli list-gpus; then
+        ok "GPU_ID=$gid"
+    else
+        warn "GPU_ID=$gid is not in 'lact cli list-gpus'."
+        warn "Set GPU_ID at the top of files/home/.local/bin/gpu-voltage to the right one,"
+        warn "or the VOLTAGE row will read the iGPU and be plausibly wrong."
+    fi
+fi
+
+say "the overlay's VOLTAGE row"
+enable_user_units gpu-voltage.service
+assemble_mangohud
+if [ "${DRY_RUN:-0}" != 1 ]; then
+    sleep 2
+    if [ -r /dev/shm/gpu-voltage.mv ]; then ok "gpu-voltage.mv = $(cat /dev/shm/gpu-voltage.mv)"
+    else warn "/dev/shm/gpu-voltage.mv not written - systemctl --user status gpu-voltage"; fi
 fi

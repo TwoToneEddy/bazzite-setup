@@ -7,41 +7,50 @@ Windows install and nothing more. `/` toggles it, in every game.
 
 | File | |
 |---|---|
-| `~/.config/MangoHud/MangoHud.conf` | the overlay itself |
+| `~/.config/MangoHud/bazzite-setup.d/10-overlay.conf` | keys, appearance, the GPU rows, max temp / max power |
+| `~/.config/MangoHud/bazzite-setup.d/30-cpu-fps.conf` | the CPU, RAM and framerate rows |
+| `~/.config/MangoHud/bazzite-setup.d/90-limiter.conf` | the FPS limiter, logging, the blacklist |
+| `~/.config/MangoHud/MangoHud.conf` | the overlay itself, assembled from the pieces above |
 | `~/.local/bin/gpu-peaks` | publishes peak GPU temperature and power |
-| `~/.local/bin/gpu-voltage` | publishes GPU core voltage, read from LACT |
 | `~/.config/systemd/user/gpu-peaks.service` | runs the above |
-| `~/.config/systemd/user/gpu-voltage.service` | |
 
-`MANGOHUD=1` itself is set in `03-dlss-presets`' `95-gaming.conf`, which is what
+`MANGOHUD=1` itself is set in `00-gaming-env`' `95-gaming.conf`, which is what
 puts the overlay on every Steam game. MangoHud ships with Bazzite.
 
-`STAGE1=1 ./install.sh` (what `../stage1.sh` runs) installs the config without
-the 12V-2x6 block and the VOLTAGE row, and starts only `gpu-peaks`, so it needs
-neither `01` nor `lact`. Run `./install.sh` again without it for the full overlay.
+## MangoHud.conf is assembled
+
+MangoHud reads one file, but two of its rows belong to other components, because
+those components own what feeds them:
+
+| Piece | From | Rows |
+|---|---|---|
+| `10-overlay.conf`, `30-cpu-fps.conf`, `90-limiter.conf` | here | everything else |
+| `20-voltage.conf` | `08-gpu-undervolt` | VOLTAGE, fed by `gpu-voltage` through LACT |
+| `50-pins.conf` | `05-per-pin-current` | the six 12V-2x6 pin currents |
+
+Each of those installers copies its piece into `~/.config/MangoHud/bazzite-setup.d/`
+and joins every piece there, in name order, into `MangoHud.conf`. So stage 1 gets
+an overlay with no pin or voltage rows and nothing to layer, and the rows appear
+when their component is installed, whichever order that happens in. The pieces
+join back into exactly the file this used to be — checked with `cmp`.
 
 ## What is on screen
 
 Thirteen items, taken from the `[Source *]` sections with `ShowInOSD=1` in the
 Windows `MSIAfterburner.cfg`: GPU temperature, usage, memory usage, core clock,
 power and voltage; CPU temperature and power; RAM usage; framerate, frametime,
-1 % low and 0.1 % low. Plus three rows Afterburner has no equivalent for: the six
-**12V-2x6 pin currents**, **max temp / max power**, and **GPU memory clock**.
+1 % low and 0.1 % low (voltage only once `08` is installed). Plus three rows Afterburner has no equivalent for: the six
+**12V-2x6 pin currents** (from `05`), **max temp / max power**, and **GPU memory clock**.
 
 Four things about the translation are worth knowing:
 
 * **CPU usage cannot be hidden.** Afterburner has it off. MangoHud draws usage,
   temperature and power as one row and drops the whole row if `cpu_stats` is off —
   verified by screenshot. So the percentage stays.
-* **GPU voltage comes from LACT, not MangoHud.** MangoHud reads NVIDIA cards
-  through NVML, and this driver has no voltage API — no voltage symbol in
-  `libnvidia-ml.so.1` at all, and `nvidia-smi -q -d VOLTAGE` prints an empty
-  section. MangoHud's own `gpu_voltage` would be a permanent `0 mV` row, so it
-  stays off. LACT gets the figure through NvAPI, so `gpu-voltage.service` asks
-  LACT once a second and publishes to `/dev/shm/gpu-voltage.mv`, which the overlay
-  `cat`s. Same pattern as the pins and the peaks, for the same two reasons: one
-  stats query costs ~16 ms (fine once a second, absurd at the overlay's refresh
-  rate), and Steam's container has no `lact` binary inside it.
+* **GPU voltage comes from LACT, not MangoHud**, because NVML — which MangoHud
+  reads NVIDIA cards through — has no voltage API. The row and its feed live in
+  `08-gpu-undervolt`, which runs the LACT daemon they read; its README has the
+  detail.
 * **Max temp / max power** exist because MangoHud has no peak tracking of its own —
   there is no `gpu_temp_max` parameter — and Afterburner does. `gpu-peaks` reads
   NVML directly rather than shelling out to `nvidia-smi`, which costs 50–100 ms a
@@ -75,8 +84,8 @@ CPU group `0080C0`, framerate group `C08080`, values white.
 
 | What | Where |
 |---|---|
-| which items show | one line each in `MangoHud.conf`. Delete or comment a line to drop it. |
-| order on screen | **the order blocks appear in the file.** Moving the `12V PINS` block above the GPU block puts the currents at the top. Verified. |
+| which items show | one line each in the pieces under `files/home/.config/MangoHud/bazzite-setup.d/`. Delete or comment a line, then re-run `./install.sh`. |
+| order on screen | **the order blocks appear in the assembled file**, which is the pieces in name order. To put the 12V-2x6 rows at the top, give `50-pins.conf` a name that sorts before the GPU block — which means splitting `10-overlay.conf` there. Verified by screenshot. |
 | position | `position=` — `top-left`, `top-center`, `top-right`, `middle-left`, `middle-right`, `bottom-left`, `bottom-center`, `bottom-right`. Or `Shift+F11` in-game with no editing. |
 | font, size, colours | `font_size`, `*_color` |
 | FPS cap | `fps_limit=` — a list; `Shift+F1` cycles it. 276 is first, to leave G-Sync headroom under 280 Hz. |
@@ -103,19 +112,12 @@ FPS by 0.5 % and *improved* the 0.1 % low, so these rows are not a stutter sourc
 
 **`gpu_mem_clock` needs `vram`.** Without it, no error — the row just is not there.
 
-**The `lact cli` trap, which shipped a wrong reading once.** `lact cli stats` with
-no `-g` silently selects GPU 0 — the Radeon iGPU — and prints *its* voltage and
-clocks with no warning. The numbers look perfectly plausible (~1170 mV while the
-5090 was at 980 mV), which is exactly why it got past review. Always pass the GPU
-id, and note `-g` is a flag on `lact cli`, **not** on `stats`, so it goes *before*
-the subcommand:
-
-```bash
-lact cli -g 10DE:2B85-1043:89E3-0000:01:00.0 stats
-```
-
-`~/.local/bin/gpu-voltage` has the id at the top as `GPU_ID`; that is the line to
-change on other hardware. `lact cli list-gpus` prints the ids.
-
 **Steam has to be fully quit and restarted** for a change to `MANGOHUD=1` to
-reach games. Changes to `MangoHud.conf` itself need only `Shift_L+F4`.
+reach games. A reassembled `MangoHud.conf` needs only `Shift_L+F4`.
+
+**An edit to the live `MangoHud.conf` is lost at the next reassembly** — which
+running this installer, `05`'s or `08`'s does. Try a change live with
+`Shift_L+F4`, then put it in the piece it belongs to. That includes `fps_limit=`:
+`display-profile` moves the current screen's refresh rate to the front of that list
+in the live file, and a reassembly puts the recorded order back until the next
+profile switch.
