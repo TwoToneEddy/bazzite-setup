@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
 # dlss - the DLSS debug indicator for every Proton game, and the gaming
-# environment's status. DLSS presets are not set here: RHI does that.
+# environment's status. DLSS presets and DLL versions are not set here: RHI
+# does that.
 #
 #   dlss status                 Show what is set right now.
 #   dlss overlay <on|off>       The DLSS / DLSS-G debug indicator overlay.
-#   dlss dlls                   Open DLSS Updater (swap the DLL versions).
 #
 # How this works: Proton's NVAPI shim (DXVK-NVAPI) passes NGX debug options to
 # the game from an environment variable. It is written into
@@ -13,9 +13,6 @@
 # session (so the autostarted Steam gets them too) and
 # which ~/.local/bin/steam-gaming also re-applies - so fully quit
 # Steam and start it again for a change to reach your games.
-#
-# The DLL versions themselves are a separate job: `dlss dlls` opens DLSS
-# Updater, which swaps nvngx_dlss*.dll inside each game.
 #
 set -uo pipefail
 
@@ -58,16 +55,14 @@ restart_hint() {
 # --- commands -----------------------------------------------------------------
 cmd_status() {
     printf 'DLSS (global, applied to every Proton game)\n\n'
-    printf '  Presets            not managed here - RHI sets them\n'
+    printf '  Presets and DLLs   not managed here - RHI sets them\n'
     local ovl; ovl=$(get DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS)
     case "$ovl" in
         *DLSSIndicator=1024*) printf '  Debug overlay      on\n' ;;
         *DLSSIndicator=0*)    printf '  Debug overlay      off\n' ;;
         *)                    printf '  Debug overlay      not set\n' ;;
     esac
-    printf '\n  DLSS DLL upgrade   %s\n' \
-        "$(grep -q '^PROTON_DLSS_UPGRADE=1' "$CONF" && echo 'on (Proton pulls the newest DLLs)' || echo off)"
-    printf '  MangoHud overlay   %s\n' \
+    printf '\n  MangoHud overlay   %s\n' \
         "$(grep -q '^MANGOHUD=1' "$CONF" && echo "on ('/' toggles it)" || echo off)"
     printf '\n  Config: %s\n' "$CONF"
 }
@@ -98,20 +93,11 @@ cmd_overlay() {
     restart_hint
 }
 
-cmd_dlls() {
-    command -v flatpak >/dev/null || die "flatpak not found."
-    flatpak info io.github.recol.dlss-updater >/dev/null 2>&1 \
-        || die "DLSS Updater is not installed."
-    printf 'Opening DLSS Updater (Games -> pick a title -> update or roll back its DLLs).\n'
-    setsid flatpak run io.github.recol.dlss-updater >/dev/null 2>&1 &
-}
-
 case "${1:-status}" in
     status)            cmd_status ;;
     overlay)           cmd_overlay "${2:-toggle}" ;;
-    dlls|dll|versions) cmd_dlls ;;
-    sr|rr|mfg|fg|launch-options|reset)
-                       die "DLSS presets are set with RHI now, not with dlss." ;;
-    -h|--help|help)    sed -n '3,18p' "$0" | sed 's/^# \{0,1\}//' ;;
+    sr|rr|mfg|fg|launch-options|reset|dlls|dll|versions)
+                       die "DLSS presets and DLLs are set with RHI now, not with dlss." ;;
+    -h|--help|help)    sed -n '3,15p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) die "Unknown command '$1'. Try: dlss help" ;;
 esac

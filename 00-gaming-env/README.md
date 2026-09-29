@@ -4,16 +4,17 @@ The environment every Steam game inherits — `MANGOHUD=1` and the Proton
 HDR switches live in the same file — which is why it is component `00`: the
 overlay, the DLSS tray and HDR all depend on it.
 
-**DLSS presets are not set here.** RHI does that. This component used to write
-SR / RR presets and a frame-generation override through DXVK-NVAPI; that was
-removed in favour of RHI. What is left of `dlss` is the debug indicator the tray
-toggles, a status readout, and a shortcut to DLSS Updater for DLL versions.
+**DLSS presets and DLL versions are not set here.** RHI sets both, explicitly.
+This component used to write SR / RR presets and a frame-generation override
+through DXVK-NVAPI, and set `PROTON_DLSS_UPGRADE=1` so GE-Proton swapped in the
+newest DLLs at launch; both were removed in favour of RHI. What is left of `dlss`
+is the debug indicator the tray toggles, and a status readout.
 
 ## What it installs
 
 | File | |
 |---|---|
-| `~/.local/bin/dlss` | status, the DLSS debug indicator, DLSS Updater |
+| `~/.local/bin/dlss` | status, and the DLSS debug indicator |
 | `~/.config/environment.d/95-gaming.conf` | what it writes; the whole gaming environment |
 | `~/.local/bin/steam-gaming` | Steam wrapper that applies the above |
 | `~/.config/autostart/steam.desktop` | autostarts Steam through the wrapper |
@@ -23,7 +24,6 @@ toggles, a status readout, and a shortcut to DLSS Updater for DLL versions.
 ```bash
 dlss status                # what is set right now
 dlss overlay on | off      # NVIDIA's DLSS indicator (see 03)
-dlss dlls                  # opens DLSS Updater, for DLL versions
 ```
 
 ## How it works
@@ -41,7 +41,6 @@ Also in that file, and worth knowing:
 | Variable | |
 |---|---|
 | `MANGOHUD=1` | puts the overlay (`02`) on every game |
-| `PROTON_DLSS_UPGRADE=1` | lets Proton pull in newer DLSS DLLs for titles shipping an older one. Pin a version instead: `310.9.1.0` |
 | `PROTON_ENABLE_WAYLAND=1` | HDR only reaches a Proton game if it presents through Wayland directly. On XWayland the compositor tone-maps the game's SDR output into the HDR screen instead, which is why Hunt reported the monitor had no HDR support |
 | `PROTON_ENABLE_HDR=1` | sets `DXVK_HDR=1` internally. Both are needed |
 
@@ -60,7 +59,7 @@ process; to check what a *running* game actually got, read
 `/proc/<pid>/environ`.
 
 **These variables need Proton GE or EM.** Stock Valve Proton ignores
-`PROTON_ENABLE_HDR`, `PROTON_ENABLE_WAYLAND` and `PROTON_DLSS_UPGRADE` entirely.
+`PROTON_ENABLE_HDR` and `PROTON_ENABLE_WAYLAND` entirely.
 Set the Proton version per game in Steam → Properties → Compatibility. The
 trade-off: GE builds do not share Valve's precompiled shader caches, so first
 launches take longer.
