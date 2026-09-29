@@ -16,6 +16,10 @@ Windows install and nothing more. `/` toggles it, in every game.
 `MANGOHUD=1` itself is set in `03-dlss-presets`' `95-gaming.conf`, which is what
 puts the overlay on every Steam game. MangoHud ships with Bazzite.
 
+`STAGE1=1 ./install.sh` (what `../stage1.sh` runs) installs the config without
+the 12V-2x6 block and the VOLTAGE row, and starts only `gpu-peaks`, so it needs
+neither `01` nor `lact`. Run `./install.sh` again without it for the full overlay.
+
 ## What is on screen
 
 Thirteen items, taken from the `[Source *]` sections with `ShowInOSD=1` in the

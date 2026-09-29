@@ -47,6 +47,7 @@ outputs by name. Those are the places to look first on different hardware.
 | [`AGENTS.md`](AGENTS.md) | the porting procedure and the rules. `CLAUDE.md` is a symlink to it |
 | [`machine-profile.conf`](machine-profile.conf) | every hardware-specific value in one place: PCI addresses, LACT ids, connector names, fan channels, the sensor chip |
 | [`preflight.sh`](preflight.sh) | compares this machine against that profile and names the file to edit for each difference. Read-only |
+| [`stage1.sh`](stage1.sh) | the basics on a fresh install: HDR, display switching, overlay + FPS limiter, DLSS toggle |
 | [`status.sh`](status.sh) | per component: installed? running? Read-only. `--porcelain` for one line each, or pass `NN` for one component |
 | `.claude/commands/` | `/setup` walks the components one at a time; `/status` reports where you are. They ship with the clone |
 | `common/lib.sh` | shared by every installer |
@@ -63,6 +64,12 @@ cd ~/bazzite-setup
 ./status.sh                     # where am I up to, component by component
 ./reference/health-check.sh     # confirm things are RUNNING, not just installed
 ```
+
+**Or just the basics first.** `./stage1.sh` installs HDR, display switching,
+the MangoHud overlay with its FPS limiter, and the DLSS indicator toggle — `02`
+to `05`, nothing layered, no reboot. The overlay goes in without the 12V-2x6 and
+VOLTAGE rows, which need `01` and `lact`. `./install-all.sh` later is stage 2 and
+puts the full overlay back.
 
 **Or let an agent walk you through it.** `CLAUDE.md` and the `/setup` command are
 in the repo, so they arrive with the clone:

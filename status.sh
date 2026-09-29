@@ -101,11 +101,17 @@ check() {
             elif [ ! -r /dev/shm/astral-pins ]; then state=partial; detail="no reading published"
             else detail="$(cat /dev/shm/astral-pins 2>/dev/null)"; fi ;;
         02-mangohud-overlay)
-            local bad=""
+            # A STAGE1=1 install has no VOLTAGE row, so nothing needs gpu-voltage.
+            local bad="" conf="$HOME/.config/MangoHud/MangoHud.conf"
             user_active gpu-peaks   || bad="$bad gpu-peaks"
-            user_active gpu-voltage || bad="$bad gpu-voltage"
-            if [ -n "$bad" ]; then state=partial; detail="user service not active:$bad"
-            else detail="feeds live: $(cat /dev/shm/gpu-voltage.mv 2>/dev/null), peak $(cat /dev/shm/gpu-peaks.temp 2>/dev/null)"; fi ;;
+            if ! grep -q 'gpu-voltage\.mv' "$conf" 2>/dev/null; then
+                if [ -n "$bad" ]; then state=partial; detail="stage 1 overlay, user service not active:$bad"
+                else detail="stage 1 overlay (no pin/voltage rows), peak $(cat /dev/shm/gpu-peaks.temp 2>/dev/null)"; fi
+            else
+                user_active gpu-voltage || bad="$bad gpu-voltage"
+                if [ -n "$bad" ]; then state=partial; detail="user service not active:$bad"
+                else detail="feeds live: $(cat /dev/shm/gpu-voltage.mv 2>/dev/null), peak $(cat /dev/shm/gpu-peaks.temp 2>/dev/null)"; fi
+            fi ;;
         03-dlss-presets)
             if grep -q '^MANGOHUD=1' "$HOME/.config/environment.d/95-gaming.conf" 2>/dev/null; then
                 detail="$(command -v dlss >/dev/null && dlss overlay status 2>/dev/null | tr -s ' ' || echo configured)"

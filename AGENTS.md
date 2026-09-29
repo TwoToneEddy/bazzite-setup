@@ -186,10 +186,11 @@ monitor as having no HDR support at all. That is exactly what Hunt did here.
 
 **The four things that must all be true**, in the order worth checking:
 
-1. **The output is in HDR mode in KWin.** Per-output, not global. Verified state
-   here: `DP-4` (the AOC) has `highDynamicRange: true` and `wideColorGamut: true`;
-   `HDMI-A-2` (the TV) and `HDMI-A-3` (the Dell) are both **false**. So a game
-   moved to the TV loses HDR and nothing announces it. System Settings → Display →
+1. **The output is in HDR mode in KWin.** Per-output, not global. Recorded state
+   here: `DP-4` (the AOC) and `HDMI-A-2` (the TV) have `highDynamicRange: true` and
+   `wideColorGamut: true`; `HDMI-A-3` (the Dell) is **false**. So a game moved to
+   the Dell loses HDR and nothing announces it. HDR on the TV is
+   configured but not yet confirmed on the real TV. System Settings → Display →
    per screen, or read `~/.config/kwinoutputconfig.json`.
 2. **The game presents through Wayland, not XWayland.** `PROTON_ENABLE_WAYLAND=1`
    **and** `PROTON_ENABLE_HDR=1` — both, in `03-dlss-presets`' `95-gaming.conf`.

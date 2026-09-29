@@ -62,18 +62,22 @@ _install_one() {
     ok "installed     $dst"
 }
 
-# install_tree - copy files/home -> $HOME and files/system -> /
+# install_tree [exclude-regex] - copy files/home -> $HOME and files/system -> /
+# Paths under files/ matching the optional extended regex are left out, for a
+# component that installs one of its files some other way.
 install_tree() {
-    local base="$COMPONENT_DIR/files" src rel
+    local base="$COMPONENT_DIR/files" src rel exclude="${1:-}"
     if [ -d "$base/home" ]; then
         while IFS= read -r src; do
             rel=${src#"$base/home/"}
+            [ -n "$exclude" ] && [[ "$rel" =~ $exclude ]] && continue
             _install_one "$src" "$HOME/$rel" ""
         done < <(find "$base/home" -type f | sort)
     fi
     if [ -d "$base/system" ]; then
         while IFS= read -r src; do
             rel=${src#"$base/system/"}
+            [ -n "$exclude" ] && [[ "$rel" =~ $exclude ]] && continue
             _install_one "$src" "/$rel" "sudo"
         done < <(find "$base/system" -type f | sort)
     fi

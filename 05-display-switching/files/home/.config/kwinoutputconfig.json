@@ -32,7 +32,7 @@
                 "edrPolicy": "always",
                 "hdrColorProfileSource": "EDID",
                 "hdrIccProfilePath": "",
-                "highDynamicRange": false,
+                "highDynamicRange": true,
                 "iccProfilePath": "",
                 "maxBitsPerColor": 0,
                 "maxPeakBrightnessOverride": 580,
@@ -51,7 +51,7 @@
                 "transform": "Normal",
                 "uuid": "a7bcd454-863f-4252-aa76-e69ce23cb82e",
                 "vrrPolicy": "Automatic",
-                "wideColorGamut": false
+                "wideColorGamut": true
             },
             {
                 "abmLevel": 0,

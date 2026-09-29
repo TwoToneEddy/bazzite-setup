@@ -1036,7 +1036,7 @@ The alarm tone and how many times it plays are at the top of
 | DLSS preset / version / overlay | `dlss` command, or the tray icon | `dlss sr M`, `dlss overlay on`, `dlss status`. Writes `~/.config/environment.d/95-gaming.conf`. **Restart Steam after any change.** |
 | DLSS DLL version | `PROTON_DLSS_UPGRADE=` in `95-gaming.conf` | `1` = newest, or pin e.g. `310.9.1.0`. Needs Proton GE/EM. |
 | HDR on/off | `PROTON_ENABLE_HDR` / `PROTON_ENABLE_WAYLAND` in `95-gaming.conf` | Both needed. Turning Wayland off should also cure the Hunt focus jump, at the cost of HDR. Full checklist for HDR that is not working, and why most of the advice online does not apply here: `~/bazzite-setup/AGENTS.md`, "HDR policy". |
-| HDR per screen | `~/.config/kwinoutputconfig.json`, or System Settings → Display | Per output, not global. Currently **on for `DP-4` only** — the TV and the Dell both have `highDynamicRange: false`, so a game moved to either loses HDR with nothing said. |
+| HDR per screen | `~/.config/kwinoutputconfig.json`, or System Settings → Display | Per output, not global. Currently **on for `DP-4` and `HDMI-A-2` (the TV)** — the Dell has `highDynamicRange: false`, so a game moved to it loses HDR with nothing said. |
 | Display layouts | `~/.local/bin/display-profile` | `display-profile gaming\|work\|tv\|dell\|status`. Refresh rates and outputs are near the top of the file. |
 | Login screen layout | `/var/lib/plasmalogin/.config/kwinoutputconfig.json` | Copy of your session's `setups` block. Delete it to get "all monitors on" back. |
 | Fan curves | `~/.local/share/gaming-setup/apply-fan-curves.py` | Idempotent — edit the curve tables and re-run. GUI: CoolerControl. |
