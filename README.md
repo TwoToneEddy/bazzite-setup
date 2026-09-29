@@ -44,6 +44,7 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 | [`10-nvtruehdr`](10-nvtruehdr/) | SDR→HDR Vulkan layer (lives in its own git repo) | no |
 | [`11-game-window-fixes`](11-game-window-fixes/) | the KWin rule that stops Hunt dropping to the desktop | no |
 | [`12-shell-environment`](12-shell-environment/) | bash aliases and a git-aware prompt, into `~/.bashrc.d/` | no |
+| [`13-vrr`](13-vrr/) | per-game VRR for windowed games, with an Onimusha example (manual guide; no installer) | display must support VRR |
 
 | File | |
 |---|---|
