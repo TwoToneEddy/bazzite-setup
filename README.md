@@ -31,7 +31,7 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 
 | Directory | What it gives you | Hardware-specific? |
 |---|---|---|
-| [`00-gaming-env`](00-gaming-env/) | the environment every Steam game inherits — the Proton HDR switches, `MANGOHUD=1` — and `dlss`: SR / RR / MFG presets and DLL version | no |
+| [`00-gaming-env`](00-gaming-env/) | the environment every Steam game inherits — the Proton HDR switches, `MANGOHUD=1` — and `dlss`, which toggles the DLSS debug indicator. DLSS presets are RHI's job | no |
 | [`01-displays`](01-displays/) | `display-profile` — four monitor layouts, on the taskbar and desktop — and HDR per screen | **yes** — output names |
 | [`02-mangohud-overlay`](02-mangohud-overlay/) | the Afterburner-matched in-game overlay, `/` to toggle, with the FPS limiter | GPU PCI address |
 | [`03-dlss-debug-overlay`](03-dlss-debug-overlay/) | tray icon that toggles NVIDIA's DLSS indicator and shows its state | no |

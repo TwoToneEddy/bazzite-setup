@@ -20,6 +20,11 @@ RTX 5090 ROG Astral OC (`1043:89e3`), SAPPHIRE NITRO+ B850M WIFI.
 >
 > `MangoHud.conf` is now assembled from pieces, and the VOLTAGE row and its
 > `gpu-voltage` feed moved from `02` to `08`. See `02-mangohud-overlay/README.md`.
+>
+> **The DLSS preset commands were removed the same day** — `dlss sr`, `rr`, `mfg`,
+> `launch-options` and `reset`, and the `DXVK_NVAPI_DRS_*` overrides in
+> `95-gaming.conf`. Presets are set with RHI now. `dlss overlay`, `status` and `dlls`
+> remain.
 
 **Everything asked for is done and tested.** Three things are deliberately left
 to you: the undervolt values, a live TV Mode test, and whether to try the

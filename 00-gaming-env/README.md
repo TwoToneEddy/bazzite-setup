@@ -1,18 +1,19 @@
-# 00 — Gaming environment and DLSS presets (`dlss`)
+# 00 — Gaming environment (`dlss`)
 
-Set the DLSS Super Resolution, Ray Reconstruction and Multi Frame Generation
-preset, and the DLSS DLL version, for every Proton game at once — or for one game
-at a time. This is the Linux equivalent of the NVIDIA App's DLSS override page.
-
-It is also the environment every Steam game inherits — `MANGOHUD=1` and the Proton
+The environment every Steam game inherits — `MANGOHUD=1` and the Proton
 HDR switches live in the same file — which is why it is component `00`: the
 overlay, the DLSS tray and HDR all depend on it.
+
+**DLSS presets are not set here.** RHI does that. This component used to write
+SR / RR presets and a frame-generation override through DXVK-NVAPI; that was
+removed in favour of RHI. What is left of `dlss` is the debug indicator the tray
+toggles, a status readout, and a shortcut to DLSS Updater for DLL versions.
 
 ## What it installs
 
 | File | |
 |---|---|
-| `~/.local/bin/dlss` | the command |
+| `~/.local/bin/dlss` | status, the DLSS debug indicator, DLSS Updater |
 | `~/.config/environment.d/95-gaming.conf` | what it writes; the whole gaming environment |
 | `~/.local/bin/steam-gaming` | Steam wrapper that applies the above |
 | `~/.config/autostart/steam.desktop` | autostarts Steam through the wrapper |
@@ -20,23 +21,16 @@ overlay, the DLSS tray and HDR all depend on it.
 ## Commands
 
 ```bash
-dlss status                                   # what is set right now
-dlss sr K        dlss sr latest   dlss sr off  # Super Resolution preset (A-O)
-dlss rr latest                                 # Ray Reconstruction preset
-dlss mfg 4x      dlss mfg auto    dlss mfg off # Frame Gen / Multi Frame Gen
-dlss overlay on | off                          # NVIDIA's DLSS indicator (see 03)
-dlss dlls                                      # opens DLSS Updater, for DLL versions
-dlss launch-options                            # the same settings for ONE game,
-                                               #   to paste into Steam
-dlss reset                                     # back to app-controlled
+dlss status                # what is set right now
+dlss overlay on | off      # NVIDIA's DLSS indicator (see 03)
+dlss dlls                  # opens DLSS Updater, for DLL versions
 ```
 
 ## How it works
 
-It writes `DXVK_NVAPI_DRS_*` variables between `# BEGIN DLSS` and `# END DLSS` in
-`95-gaming.conf`. DXVK-NVAPI reads them and presents them to the game as if they
-were driver settings set by the NVIDIA control panel, which is how the override
-reaches a game that has no such option of its own.
+`dlss overlay` writes `DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS` between `# BEGIN DLSS`
+and `# END DLSS` in `95-gaming.conf`. DXVK-NVAPI writes it into the game's Wine
+registry, where NGX reads it when the game starts DLSS.
 
 `95-gaming.conf` is a `systemd` `environment.d` file, so it is also exported into
 your whole session at login — but Steam gets it through the wrapper, which reads
@@ -95,9 +89,6 @@ a game that resizes its own window can end up offset: Onimusha showed up as
 
 **Bare `dlss overlay` TOGGLES.** The read-only one is `dlss overlay status`. That
 has caught me out.
-
-**The settings are global by design.** `dlss launch-options` prints the same
-settings as a per-game launch-option string if you want one title to differ.
 
 **`PROTON_ENABLE_WAYLAND=1` is also the cause of Hunt's jump to the desktop on
 launch** (see `11-game-window-fixes`). Turning it off cures that at the cost of
