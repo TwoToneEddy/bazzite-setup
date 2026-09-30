@@ -141,8 +141,9 @@ already correct. They stop at the first genuine failure rather than carrying on 
 leaving something half-built that looks finished.
 
 The components are numbered so that each depends only on lower numbers. `00`–`03`
-are **stage 1** — HDR, display switching, the overlay with its FPS limiter, the DLSS
-indicator toggle — and need no layered package; `./stage1.sh` installs just those.
+are **stage 1** — RHI (`00-rhi`, cloned from `git@github.com:TwoToneEddy/RHI.git`),
+HDR, display switching, the overlay with its FPS limiter, the DLSS indicator
+toggle — and need no layered package; `./stage1.sh` installs just those.
 Everything from `04` on is stage 2.
 
 `04-prerequisites` will tell you to layer packages and reboot. That is a real
@@ -218,7 +219,7 @@ HDR is a data point about the game, not proof the system is broken.
 **Many games' own HDR is poor even when it works.** That is what `10-nvtruehdr`
 exists for — an SDR→HDR Vulkan layer, and the better path for a title with no HDR
 or a bad implementation. RenoDX and Luma Framework are the same idea from the mod
-side; `~/RHI` is the installer for those here.
+side; `~/RHI` is the installer for those here, cloned and built by `00-rhi`.
 
 ### Third-party reports, recorded but NOT verified here
 
@@ -360,7 +361,7 @@ That is the behaviour to expect, not a bug to chase.
 | `01-displays` | connector names and monitor modes |
 | `07-fan-control` | the board's sensor chip and channel names |
 | `02-mangohud-overlay` | the GPU's PCI address |
-| `00`, `03`, `06`, `09`, `10`, `12` | nothing — these port as-is |
+| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `12` | nothing — these port as-is |
 
 ## Reporting back
 

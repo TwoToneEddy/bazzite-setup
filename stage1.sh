@@ -4,6 +4,7 @@
 # Components 00-03 are stage 1, by construction: they depend on nothing numbered
 # higher, and nothing in them needs a layered package.
 #
+#   00-rhi               RHI: ReShade, RenoDX/Luma HDR mods, DLSS presets
 #   00-gaming-env        the Proton HDR switches, MANGOHUD=1, the dlss command
 #   01-displays          display-profile, and HDR per screen in KWin
 #   02-mangohud-overlay  the overlay and its FPS limiter

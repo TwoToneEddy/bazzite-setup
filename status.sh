@@ -92,6 +92,11 @@ check() {
             if grep -q '^MANGOHUD=1' "$HOME/.config/environment.d/95-gaming.conf" 2>/dev/null; then
                 detail="$(command -v dlss >/dev/null && dlss overlay status 2>/dev/null | tr -s ' ' || echo configured)"
             else state=partial; detail="95-gaming.conf has no MANGOHUD=1"; fi ;;
+        00-rhi)
+            if [ ! -d "$HOME/RHI/.git" ]; then state=absent; detail="repo not cloned"
+            elif [ ! -x "$HOME/RHI/artifacts/linux-x64/RHI.Linux" ]; then state=partial; detail="cloned but not built"
+            elif [ ! -e "$HOME/.local/share/applications/rhi-linux.desktop" ]; then state=partial; detail="built, no menu entry"
+            else detail="built, repo on $(git -C "$HOME/RHI" branch --show-current 2>/dev/null)"; fi ;;
         01-displays)
             if command -v kscreen-doctor >/dev/null; then
                 detail="$(display-profile status 2>/dev/null | grep -c ON) output(s) on"
