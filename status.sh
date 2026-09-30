@@ -146,8 +146,6 @@ check() {
             if [ ! -d "$HOME/nvtruehdr/.git" ]; then state=partial; detail="repo not cloned"
             elif [ ! -x "$HOME/.local/bin/nvtruehdr" ]; then state=partial; detail="layer not built"
             else detail="layer built, repo on $(git -C "$HOME/nvtruehdr" branch --show-current 2>/dev/null)"; fi ;;
-        11-game-window-fixes)
-            detail="rules installed" ;;
         12-shell-environment)
             if ! grep -q 'bashrc.d' "$HOME/.bashrc" 2>/dev/null; then
                 state=partial; detail="~/.bashrc does not source ~/.bashrc.d/"

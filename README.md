@@ -42,7 +42,6 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 | [`08-gpu-undervolt`](08-gpu-undervolt/) | LACT, the undervolt profile itself, and the overlay's VOLTAGE row | **yes** — silicon-specific |
 | [`09-taskbar`](09-taskbar/) | the panel launcher row, and the only safe way to edit it | no |
 | [`10-nvtruehdr`](10-nvtruehdr/) | SDR→HDR Vulkan layer (lives in its own git repo) | no |
-| [`11-game-window-fixes`](11-game-window-fixes/) | the KWin rule that stops Hunt dropping to the desktop | no |
 | [`12-shell-environment`](12-shell-environment/) | bash aliases and a git-aware prompt, into `~/.bashrc.d/` | no |
 | [`13-vrr`](13-vrr/) | per-game VRR for windowed games, with an Onimusha example (manual guide; no installer) | display must support VRR |
 
@@ -91,7 +90,7 @@ edit the Plasma panel config live, or reboot.
 Only five values genuinely move between machines — the GPU's PCI address, its LACT
 id, the monitor connectors, the fan channel names and the board's sensor module.
 `preflight.sh` finds all five and `AGENTS.md` tabulates where each one lives.
-Components `00`, `03`, `06`, `09`, `10`, `11` and `12` port with no changes at all.
+Components `00`, `03`, `06`, `09`, `10` and `12` port with no changes at all.
 
 One component lives elsewhere on purpose: **nvtruehdr** is its own repository at
 <https://github.com/TwoToneEddy/nvtruehdr>, and `10-nvtruehdr/install.sh` clones

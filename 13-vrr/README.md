@@ -29,26 +29,20 @@ each visible window an independent refresh rate.
 
 ## Example: Onimusha: Way of the Sword
 
-The existing [Onimusha rule in component 11](../11-game-window-fixes/files/home/.config/kwinrulesrc)
-forces fullscreen and removes borders to address its oversized TV window. If
-that rule matches and KWin considers the game fullscreen, Automatic should
-already enable VRR. **An Adaptive sync rule is useful if you want to keep the
-game windowed, or explicitly enable VRR for it regardless of fullscreen state.**
+With the TV at 100% scale, VRR is confirmed working in Onimusha under the
+Automatic policy with no window rule at all. The steps below are only needed if
+that stops being true, or for another game where Automatic does not kick in.
 
 1. Launch Onimusha, then open **System Settings → Window Management → Window
    Rules**.
-2. Edit the existing **Onimusha Way of the Sword - force fullscreen** rule if
-   present, or add a new rule named **Onimusha - VRR**.
+2. Add a new rule named **Onimusha - VRR**.
 3. Use **Detect Window Properties** and select the actual game window. Match its
-   window class/application identity rather than a changing window title. The
-   repository records `onimushawots.exe` for native Wayland and
-   `steam_app_2638890` for XWayland; confirm what your running game reports.
+   window class/application identity rather than a changing window title. Its
+   class has been `onimushawots.exe` on native Wayland and
+   `steam_app_2638890` on XWayland; confirm what your running game reports.
 4. Choose **Add Property → Adaptive sync**, set the policy to **Force** and the
    value to **Yes**, then apply.
-5. If you want windowed play, remove the existing rule's **Fullscreen** and
-   **No titlebar and frame** properties as appropriate. Adding Adaptive sync by
-   itself does not undo those properties.
-6. Focus the game and verify VRR as described below. Restart the game if needed
+5. Focus the game and verify VRR as described below. Restart the game if needed
    after changing the rule.
 
 For reference, the Adaptive sync property is stored in `~/.config/kwinrulesrc`
@@ -61,9 +55,7 @@ adaptivesyncrule=2
 
 Use the GUI to manage the rule and its matching criteria. These lines are not a
 complete standalone rules file. **Do not replace your whole `kwinrulesrc` with
-this example.** Component 11's current installer replaces that file, so rerunning
-it would remove a locally added VRR property unless you also record it in that
-component's source rules file.
+this example.**
 
 To undo the VRR exception, remove only the **Adaptive sync** property (or delete
 the dedicated VRR rule). The display then follows Automatic's default behavior.

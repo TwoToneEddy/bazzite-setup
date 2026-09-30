@@ -175,7 +175,9 @@ apply() {
     # 100%, HDR + wide colour gamut on, SDR brightness 570 nits. Stating them
     # here means a stray change in System Settings is undone by the next switch.
     # (Peak-brightness override and gamut wideness have no kscreen-doctor verb;
-    # those stay in kwinoutputconfig.json.)
+    # those stay in kwinoutputconfig.json.) Keep the scale at 100%: at 220% a
+    # game with no fullscreen option (Onimusha) opened a window bigger than the
+    # 1746x982 logical screen and KWin pushed it off-centre.
     [ "$primary" = "$TV_OUT" ] && args+=("output.${primary}.vrrpolicy.automatic"
                                          "output.${primary}.scale.1"
                                          "output.${primary}.hdr.enable"

@@ -122,7 +122,7 @@ a game that resizes its own window can end up offset: Onimusha showed up as
 has caught me out.
 
 **`PROTON_ENABLE_WAYLAND=1` is also the cause of Hunt's jump to the desktop on
-launch** (see `11-game-window-fixes`). Turning it off cures that at the cost of
+launch** — click the game window to get back in. Turning it off cures that at the cost of
 HDR.
 
 **Do not add HDR variables here from a forum post.** The two in this file are the

@@ -256,7 +256,7 @@ of what moved.
 game inherits. An unexplained variable in it outlives whoever added it.
 
 **`PROTON_ENABLE_WAYLAND=1` has a known cost here**: it is why Hunt jumps to the
-desktop on launch, which `11-game-window-fixes` works around with a KWin rule.
+desktop on launch; click the game window to get back into it.
 Turning Wayland off cures the jump and loses HDR. That trade-off was made
 deliberately — do not quietly reverse it.
 
@@ -333,7 +333,6 @@ finds what each component needs.
 ```
 00-gaming-env ──> 02  (MANGOHUD=1 lives in 95-gaming.conf)
               ──> 03  (the debug-overlay switch lives there too)
-01-displays   ──> 11  (window-info, for finding a window class)
 02-mangohud-overlay ──> 05, 08  (they add their rows to its MangoHud.conf)
 04-prerequisites ──> 05, 07, 08  (packages, kernel modules)
      └─ i2c-dev ──> 05-per-pin-current
@@ -361,7 +360,7 @@ That is the behaviour to expect, not a bug to chase.
 | `01-displays` | connector names and monitor modes |
 | `07-fan-control` | the board's sensor chip and channel names |
 | `02-mangohud-overlay` | the GPU's PCI address |
-| `00`, `03`, `06`, `09`, `10`, `11`, `12` | nothing — these port as-is |
+| `00`, `03`, `06`, `09`, `10`, `12` | nothing — these port as-is |
 
 ## Reporting back
 
