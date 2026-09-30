@@ -88,7 +88,7 @@ CPU group `0080C0`, framerate group `C08080`, values white.
 | order on screen | **the order blocks appear in the assembled file**, which is the pieces in name order. To put the 12V-2x6 rows at the top, give `50-pins.conf` a name that sorts before the GPU block — which means splitting `10-overlay.conf` there. Verified by screenshot. |
 | position | `position=` — `top-left`, `top-center`, `top-right`, `middle-left`, `middle-right`, `bottom-left`, `bottom-center`, `bottom-right`. Or `Shift+F11` in-game with no editing. |
 | font, size, colours | `font_size`, `*_color` |
-| FPS cap | `fps_limit=` — a list; `Shift+F1` cycles it. 276 is first, to leave G-Sync headroom under 280 Hz. |
+| FPS cap | `fps_limit=<cap>,0` — `Shift+F1` toggles between the cap and unlimited. The cap is per screen (AOC 250, TV 116, Dell 59), written by `display-profile` (`01`); the piece holds the AOC's as the default. `fps_limit_method=early` for even frame pacing on VRR, and `show_fps_limit` puts the active cap on the overlay. |
 | toggle key | `toggle_hud=slash` |
 | logging | `autostart_log=` (`0` = off); `Shift+F2` logs on demand |
 
@@ -118,6 +118,5 @@ reach games. A reassembled `MangoHud.conf` needs only `Shift_L+F4`.
 **An edit to the live `MangoHud.conf` is lost at the next reassembly** — which
 running this installer, `05`'s or `08`'s does. Try a change live with
 `Shift_L+F4`, then put it in the piece it belongs to. That includes `fps_limit=`:
-`display-profile` moves the current screen's refresh rate to the front of that list
-in the live file, and a reassembly puts the recorded order back until the next
-profile switch.
+`display-profile` rewrites it in the live file with the current screen's cap, and a
+reassembly puts the AOC default back until the next profile switch.
