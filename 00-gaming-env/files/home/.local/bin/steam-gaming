@@ -20,4 +20,10 @@ if [ -f "$CONF" ]; then
     set +a
 fi
 
+# The DLSS indicator is set in each prefix's registry by `dlss overlay`. If this
+# variable is absent, GE-Proton fills in "DLSSIndicator=0,..." (a setdefault in
+# its proton script) and DXVK-NVAPI writes that over the registry at every game
+# launch. Set but empty, GE-Proton leaves it alone and nothing is written.
+export DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS=
+
 exec /usr/bin/bazzite-steam "$@"

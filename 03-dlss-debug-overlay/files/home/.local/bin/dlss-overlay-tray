@@ -16,8 +16,8 @@ The icon also follows changes made elsewhere, e.g. `dlss overlay on` in a
 terminal, because it watches the config file.
 
 The setting is read by NGX when a game creates its DLSS feature, so it has to be
-set before a game starts, and Steam has to be restarted to pick it up - it
-travels in Steam's environment, not in a registry the game re-reads.
+set before a game starts. `dlss overlay` writes it into each game's prefix
+registry, as Windows does, so no Steam restart is needed.
 """
 
 import os
@@ -30,7 +30,7 @@ from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
 
 HOME = os.path.expanduser("~")
 DLSS = os.path.join(HOME, ".local/bin/dlss")
-CONF = os.path.join(HOME, ".config/environment.d/95-gaming.conf")
+CONF = os.path.join(HOME, ".config/dlss-overlay")
 ICONS = os.path.join(HOME, ".local/share/icons/hicolor")
 
 
@@ -53,12 +53,9 @@ def read_state():
     """
     try:
         with open(CONF) as fh:
-            for line in fh:
-                if line.startswith("DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS="):
-                    return "off" if "DLSSIndicator=0" in line else "on"
+            return "on" if fh.read().strip() == "on" else "off"
     except OSError:
-        pass
-    return "off"
+        return "off"
 
 
 class Tray:
@@ -117,7 +114,7 @@ class Tray:
         self.tray.setToolTip(
             f"DLSS debug overlay is {self.state.upper()}\n"
             f"Click to turn it {other}.\n"
-            "Restart Steam for it to reach a game."
+            "Applies the next time a game starts."
         )
         self.act_on.setEnabled(self.state != "on")
         self.act_off.setEnabled(self.state != "off")
@@ -134,8 +131,8 @@ class Tray:
         if self.state == want:
             self.tray.showMessage(
                 f"DLSS overlay {self.state.upper()}",
-                "Takes effect next time a game starts DLSS.\n"
-                "Fully quit Steam and start it again first.",
+                "Takes effect the next time a game starts.\n"
+                "A game that is open now keeps its current setting.",
                 icon_for(self.state), 4000)
         else:
             self.tray.showMessage(

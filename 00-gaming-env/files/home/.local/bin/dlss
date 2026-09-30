@@ -7,90 +7,110 @@
 #   dlss status                 Show what is set right now.
 #   dlss overlay <on|off>       The DLSS / DLSS-G debug indicator overlay.
 #
-# How this works: Proton's NVAPI shim (DXVK-NVAPI) passes NGX debug options to
-# the game from an environment variable. It is written into
-# ~/.config/environment.d/95-gaming.conf, which systemd exports to the whole
-# session (so the autostarted Steam gets them too) and
-# which ~/.local/bin/steam-gaming also re-applies - so fully quit
-# Steam and start it again for a change to reach your games.
+# How this works: NGX reads the indicator from the registry when a game starts
+# DLSS - HKLM\SOFTWARE\NVIDIA Corporation\Global\NGXCore, ShowDlssIndicator and
+# DLSSG_IndicatorText - exactly as on Windows. Under Proton each game has its own
+# registry, in its prefix, so `dlss overlay` writes the values into every
+# prefix's system.reg directly. No Steam restart: the next launch of each game
+# sees the change. A game that is running at the time is skipped (Wine would
+# write its own copy back over the edit on exit); toggle again once it is closed.
+#
+# The chosen state is kept in ~/.config/dlss-overlay so that prefixes that do
+# not exist yet can be brought into line by the next toggle.
 #
 set -uo pipefail
 
-# The real file lives in environment.d so that systemd's user session exports
-# it to EVERYTHING - including the Steam that KDE autostarts at login, which
-# does not go through any launcher we control. ~/.config/gaming-env.conf is a
-# symlink here for convenience; write to the real path, because the temp-file
-# rename below would otherwise replace the symlink with a regular file.
 CONF="${HOME}/.config/environment.d/95-gaming.conf"
-BEGIN="# BEGIN DLSS"
-END="# END DLSS"
+STATE="${HOME}/.config/dlss-overlay"
+STEAM="${HOME}/.local/share/Steam"
 
 die()  { printf '%s\n' "$*" >&2; exit 1; }
 
-[ -f "$CONF" ] || die "$CONF does not exist. Was the gaming setup installed?"
-grep -q "^${BEGIN}\$" "$CONF" || die "$CONF has no '$BEGIN' marker."
+state() { cat "$STATE" 2>/dev/null || echo off; }
 
-# --- reading and writing the managed block ------------------------------------
-block()      { sed -n "/^${BEGIN}\$/,/^${END}\$/p" "$CONF" | sed '1d;$d'; }
-get()        { block | grep "^$1=" | tail -1 | cut -d= -f2-; }
-
-set_var() {  # set_var NAME VALUE   (empty VALUE removes the line)
-    local name="$1" value="${2:-}" tmp
-    tmp=$(mktemp)
-    awk -v b="$BEGIN" -v e="$END" -v n="$name" -v v="$value" '
-        $0==b { print; inblk=1; next }
-        $0==e { if (v != "") print n "=" v; print; inblk=0; next }
-        inblk && $0 ~ "^" n "=" { next }
-        { print }
-    ' "$CONF" > "$tmp" && mv "$tmp" "$CONF"
+# Every compatdata/<appid>/pfx in every Steam library.
+prefixes() {
+    { printf '%s\n' "$STEAM"
+      sed -n 's/^[[:space:]]*"path"[[:space:]]*"\(.*\)"$/\1/p' \
+          "$STEAM/steamapps/libraryfolders.vdf" 2>/dev/null
+    } | while read -r lib; do readlink -f "$lib"; done | sort -u | while read -r lib; do
+        for p in "$lib"/steamapps/compatdata/*/pfx; do
+            [ -f "$p/system.reg" ] && printf '%s\n' "$p"
+        done
+    done
 }
 
-restart_hint() {
-    # Push the change into the running session too, so anything started from
-    # now on picks it up without waiting for a re-login.
-    systemctl --user daemon-reload 2>/dev/null || true
-    printf '\nFully quit Steam and start it again for this to reach your games.\n'
+# Prefixes with a wineserver running, i.e. a game open in them right now.
+running_prefixes() {
+    local pid
+    for pid in $(pgrep -x wineserver); do
+        tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null |
+            sed -n 's/^WINEPREFIX=//p' | while read -r p; do readlink -f "$p"; done
+    done
+}
+
+# set_reg <pfx> <indicator> <dlssg>  - set both values, adding the key if needed.
+set_reg() {
+    python3 - "$1/system.reg" "$2" "$3" <<'PY'
+import os, sys, time
+path, ind, dlssg = sys.argv[1], int(sys.argv[2]), int(sys.argv[3])
+key = "[Software\\\\NVIDIA Corporation\\\\Global\\\\NGXCore]"
+want = {"ShowDlssIndicator": ind, "DLSSG_IndicatorText": dlssg}
+lines = open(path, encoding="utf-8", errors="surrogateescape").read().split("\n")
+start = next((i for i, l in enumerate(lines) if l.startswith(key + " ")), None)
+if start is None:
+    lines += [f"{key} {int(time.time())}", "#time=0"] + \
+             [f'"{k}"=dword:{v:08x}' for k, v in want.items()] + [""]
+else:
+    end = start + 1
+    while end < len(lines) and lines[end].strip():
+        end += 1
+    body = [l for l in lines[start + 1:end]
+            if not any(l.startswith(f'"{k}"=') for k in want)]
+    body += [f'"{k}"=dword:{v:08x}' for k, v in want.items()]
+    lines[start + 1:end] = body
+tmp = path + ".dlss-tmp"
+open(tmp, "w", encoding="utf-8", errors="surrogateescape").write("\n".join(lines))
+os.replace(tmp, path)
+PY
+}
+
+apply_state() {  # apply_state on|off
+    local ind=0 dlssg=0 p run n=0 skipped=()
+    [ "$1" = on ] && { ind=1024; dlssg=2; }   # 1024 = DLSS indicator, 2 = DLSS-G
+    run=$(running_prefixes)
+    while read -r p; do
+        [ -n "$p" ] || continue
+        if printf '%s\n' "$run" | grep -qxF "$p"; then
+            skipped+=("$(basename "$(dirname "$p")")"); continue
+        fi
+        set_reg "$p" "$ind" "$dlssg" && n=$((n + 1))
+    done < <(prefixes)
+    printf '%s\n' "$1" > "$STATE"
+    printf 'DLSS debug overlay -> %s (%d prefixes; applies the next time each game starts)\n' "$1" "$n"
+    [ ${#skipped[@]} -eq 0 ] ||
+        printf 'Skipped, game running: app %s - toggle again after closing it.\n' "${skipped[*]}"
 }
 
 # --- commands -----------------------------------------------------------------
 cmd_status() {
     printf 'DLSS (global, applied to every Proton game)\n\n'
     printf '  Presets and DLLs   not managed here - RHI sets them\n'
-    local ovl; ovl=$(get DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS)
-    case "$ovl" in
-        *DLSSIndicator=1024*) printf '  Debug overlay      on\n' ;;
-        *DLSSIndicator=0*)    printf '  Debug overlay      off\n' ;;
-        *)                    printf '  Debug overlay      not set\n' ;;
-    esac
+    printf '  Debug overlay      %s\n' "$(state)"
+    grep -q '^DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS=' "$CONF" 2>/dev/null &&
+        printf '  !! DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS is still set in %s;\n     it overrides the registry at every launch. Remove it.\n' "$CONF"
     printf '\n  MangoHud overlay   %s\n' \
         "$(grep -q '^MANGOHUD=1' "$CONF" && echo "on ('/' toggles it)" || echo off)"
-    printf '\n  Config: %s\n' "$CONF"
+    printf '\n  State: %s\n' "$STATE"
 }
 
 cmd_overlay() {
     case "${1:-toggle}" in
-        on)
-            # 1024 is the DLSS indicator, 2 the DLSS-G one. NGX reads these
-            # from the Wine registry, so DXVK-NVAPI writes them there for us.
-            set_var DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS "DLSSIndicator=1024,DLSSGIndicator=2"
-            printf 'DLSS debug overlay -> on\n' ;;
-        off)
-            # It has to be written as zero, not removed: the values live in the
-            # prefix registry, so dropping the variable leaves the last write
-            # in place and the overlay stays on.
-            set_var DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS "DLSSIndicator=0,DLSSGIndicator=0"
-            printf 'DLSS debug overlay -> off\n'
-            printf '(Leave this set for one run of each game so the zero reaches its registry.)\n' ;;
-        status)
-            cmd_status | grep 'Debug overlay'; return 0 ;;
-        toggle)
-            case "$(get DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS)" in
-                *DLSSIndicator=1024*) cmd_overlay off; return ;;
-                *) cmd_overlay on; return ;;
-            esac ;;
+        on|off) apply_state "$1" ;;
+        status) printf 'Debug overlay      %s\n' "$(state)" ;;
+        toggle) if [ "$(state)" = on ]; then apply_state off; else apply_state on; fi ;;
         *) die "usage: dlss overlay <on|off|status>" ;;
     esac
-    restart_hint
 }
 
 case "${1:-status}" in
@@ -98,6 +118,6 @@ case "${1:-status}" in
     overlay)           cmd_overlay "${2:-toggle}" ;;
     sr|rr|mfg|fg|launch-options|reset|dlls|dll|versions)
                        die "DLSS presets and DLLs are set with RHI now, not with dlss." ;;
-    -h|--help|help)    sed -n '3,15p' "$0" | sed 's/^# \{0,1\}//' ;;
+    -h|--help|help)    sed -n '3,19p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) die "Unknown command '$1'. Try: dlss help" ;;
 esac

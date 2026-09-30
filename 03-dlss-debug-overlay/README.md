@@ -15,8 +15,8 @@ that toggles it and shows its current state**. Port of Windows'
 | `~/.local/share/applications/dlss-overlay-toggle.desktop` | its app-menu entry |
 | `~/.local/share/icons/hicolor/*/apps/dlss-overlay-{on,off}.png` | the Windows `.ico` artwork, all eight sizes |
 
-The underlying switch is `DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS` in
-`95-gaming.conf`, which `00-gaming-env` installs. Install that first.
+The underlying switch is the `dlss` command from `00-gaming-env`, which writes
+NGX's registry values into every Proton prefix. Install that first.
 
 ## Using it
 
@@ -24,7 +24,7 @@ The underlying switch is `DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS` in
 * **Right click** gives explicit on / off and a "Show DLSS settings" window.
 * The icon changes **instantly**, and also follows changes made elsewhere — run
   `dlss overlay on` in a terminal and the tray icon updates, because it watches
-  `95-gaming.conf` with a `QFileSystemWatcher`.
+  `~/.config/dlss-overlay` with a `QFileSystemWatcher`.
 
 From a shell: `dlss overlay on`, `dlss overlay off`, `dlss overlay status`.
 
@@ -64,8 +64,9 @@ To keep it permanently visible: right-click the tray → **Configure System Tray
 
 **Bare `dlss overlay` TOGGLES**; `dlss overlay status` is the read-only one.
 
-**Steam has to be fully quit and restarted** for a change to reach a running game —
-the indicator is a launch-time NGX option, not something a game re-reads.
+**It applies at the next game launch, with no Steam restart.** A game that is
+already open keeps its setting and is skipped by the toggle. Toggle again once
+it is closed.
 
 **`dlss-overlay-toggle` still rewrites its own `.desktop` icon**, Windows-style.
 That is correct behaviour and harmless; it is just only visible after a relogin,

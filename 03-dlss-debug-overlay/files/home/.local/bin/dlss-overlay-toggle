@@ -4,15 +4,14 @@
 #
 # Windows flips a registry value (HKLM\...\NGXCore\ShowDlssIndicator) and then
 # repoints its own shortcut at dlss-on.ico / dlss-off.ico so the icon always
-# shows the CURRENT state. This does the same thing: it flips the DXVK-NVAPI
-# debug option in ~/.config/environment.d/95-gaming.conf via the `dlss` command,
+# shows the CURRENT state. This does the same thing: the `dlss` command writes
+# the same registry values into every Proton prefix,
 # then rewrites its own .desktop file to point at the matching icon (converted
 # from the very same .ico files) and nudges Plasma to re-read it.
 #
 # Like the Windows one, this has to be set BEFORE a game starts: NGX only reads
 # the setting when the game creates its DLSS feature, so it cannot change
-# mid-session. Unlike Windows it also needs Steam restarted, because the setting
-# travels in Steam's environment rather than in a registry the game reads live.
+# mid-session. As on Windows, no Steam restart is needed.
 #
 #   dlss-overlay-toggle              flip it
 #   dlss-overlay-toggle on|off       force a state
@@ -98,8 +97,8 @@ write_desktop "$now"
 if [ "$now" = "$want" ]; then
     notify-send -a "DLSS Overlay" -i "dlss-overlay-$now" \
         "DLSS overlay ${now^^}" \
-        "Takes effect next time a game starts DLSS.
-Fully quit Steam and start it again first."
+        "Takes effect the next time a game starts.
+A game that is open now keeps its current setting."
 else
     notify-send -a "DLSS Overlay" -u critical -i dialog-error \
         "Could not change the DLSS overlay" \
