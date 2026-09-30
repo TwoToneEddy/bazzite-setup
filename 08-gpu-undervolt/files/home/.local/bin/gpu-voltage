@@ -23,6 +23,10 @@ container with its own /run, so anything written there is invisible to them.
 The container also has no `lact` binary, which is the second reason MangoHud
 cannot just run the command itself.
 
+It also publishes the active LACT profile name to /dev/shm/gpu-profile.name,
+for the overlay's PROFILE row and the gpu-profile tray icon. That way a switch
+made in the LACT GUI shows up too, not only one made with gpu-profile.
+
   gpu-voltage --daemon    loop, publishing the voltage (this is the service)
   gpu-voltage --status    print it once
 """
@@ -35,6 +39,7 @@ import sys
 import time
 
 OUT = "/dev/shm/gpu-voltage.mv"
+PROFILE_OUT = "/dev/shm/gpu-profile.name"
 GPU_ID = "10DE:2B85-1043:89E3-0000:01:00.0"
 PATTERN = re.compile(r"^GPU Voltage:\s*(\d+)\s*mV", re.M)
 
@@ -52,13 +57,28 @@ def read_mv():
     return int(m.group(1)) if m else None
 
 
-def publish(mv):
-    """Write atomically - MangoHud reads this file underneath us."""
-    text = f"{mv} mV" if mv is not None else "--"
-    tmp = OUT + ".tmp"
+def read_profile():
+    """Return the active LACT profile's name, or None if lactd did not answer."""
+    try:
+        out = subprocess.run(
+            ["lact", "cli", "profile", "get"],
+            capture_output=True, text=True, timeout=5,
+        ).stdout.strip()
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+    return out or None
+
+
+def write(path, text):
+    """Write atomically - MangoHud reads these files underneath us."""
+    tmp = path + ".tmp"
     with open(tmp, "w") as f:
         f.write(text + "\n")
-    os.replace(tmp, OUT)
+    os.replace(tmp, path)
+
+
+def publish(mv):
+    write(OUT, f"{mv} mV" if mv is not None else "--")
 
 
 def daemon():
@@ -66,6 +86,7 @@ def daemon():
         signal.signal(sig, lambda *_: sys.exit(0))
     while True:
         publish(read_mv())
+        write(PROFILE_OUT, read_profile() or "--")
         time.sleep(1)
 
 

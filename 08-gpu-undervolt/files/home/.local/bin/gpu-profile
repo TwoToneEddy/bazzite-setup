@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# gpu-profile - switch LACT profiles without opening the GUI.
+#
+#   gpu-profile              print the active profile
+#   gpu-profile list         list profiles, the active one marked *
+#   gpu-profile set NAME     make NAME active
+#   gpu-profile next         cycle to the next profile (Ctrl+Alt+P)
+#
+# A thin wrapper over `lact cli profile`, which needs no sudo: lactd lets the
+# wheel group in (admin_group in /etc/lact/config.yaml). Switching changes real
+# clocks and voltage straight away, game running or not - which is the point,
+# but each profile has to be stable on its own for that to be safe.
+#
+# After a switch it writes /dev/shm/gpu-profile.name at once, so the overlay's
+# PROFILE row does not lag by up to a second behind gpu-voltage.service, and
+# posts a desktop notification, which is the only feedback a hotkey gives.
+set -euo pipefail
+
+SHM=/dev/shm/gpu-profile.name
+
+current() { lact cli profile get; }
+profiles() { lact cli profile list; }
+
+publish() {
+    printf '%s\n' "$1" >"$SHM.tmp" && mv -f "$SHM.tmp" "$SHM"
+}
+
+notify() {
+    command -v notify-send >/dev/null || return 0
+    notify-send -a "GPU profile" -i "$2" -h string:x-canonical-private-synchronous:gpu-profile \
+        "GPU profile: $1" "Clocks and voltage have changed." || true
+}
+
+icon_for() {
+    case "$1" in
+        *[Uu][Vv]*|*[Uu]nder*) echo battery-profile-powersave ;;
+        *[Oo]verclock*|[Oo][Cc]*) echo battery-profile-performance ;;
+        *) echo battery-profile-balanced ;;
+    esac
+}
+
+set_profile() {
+    local want="$1"
+    profiles | grep -qxF -- "$want" || { echo "no such profile: $want" >&2; exit 1; }
+    lact cli profile set "$want" >/dev/null
+    local now
+    now=$(current)
+    publish "$now"
+    [ "$now" = "$want" ] || { echo "asked for $want, LACT reports $now" >&2; exit 1; }
+    notify "$now" "$(icon_for "$now")"
+    echo "$now"
+}
+
+case "${1:-get}" in
+    get) current ;;
+    list)
+        cur=$(current)
+        profiles | while IFS= read -r p; do
+            [ "$p" = "$cur" ] && echo "* $p" || echo "  $p"
+        done ;;
+    set) [ -n "${2:-}" ] || { echo "usage: gpu-profile set NAME" >&2; exit 2; }
+         set_profile "$2" ;;
+    next)
+        mapfile -t all < <(profiles)
+        cur=$(current)
+        nxt=${all[0]}
+        for i in "${!all[@]}"; do
+            [ "${all[$i]}" = "$cur" ] && nxt=${all[$(( (i + 1) % ${#all[@]} ))]}
+        done
+        set_profile "$nxt" ;;
+    *) sed -n '2,8s/^# \{0,1\}//p' "$0" >&2; exit 2 ;;
+esac

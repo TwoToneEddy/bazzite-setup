@@ -9,11 +9,6 @@ gpus:
     fan_control_enabled: false
     power_mizer_mode: Auto
 profiles:
-  UV:
-    gpus:
-      10DE:2B85-1043:89E3-0000:01:00.0:
-        fan_control_enabled: false
-        power_mizer_mode: PreferMaximumPerformance
   UV1:
     gpus:
       10DE:2B85-1043:89E3-0000:01:00.0:
@@ -405,5 +400,15 @@ profiles:
           126:
             clockspeed_offset: 240
             voltage: 1240
+  Overclock1:
+    gpus:
+      10DE:2B85-1043:89E3-0000:01:00.0:
+        fan_control_enabled: false
+        power_mizer_mode: Auto
+        gpu_clock_offsets:
+          0: 200
+        mem_clock_offsets:
+          0: 6000
+        voltage_boost: 0
 current_profile: null
 auto_switch_profiles: false

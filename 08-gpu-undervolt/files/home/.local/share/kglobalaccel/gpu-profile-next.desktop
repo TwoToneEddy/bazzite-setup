@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Next GPU profile
+Comment=Cycle to the next LACT profile (Ctrl+Alt+P)
+Exec=/home/lee/.local/bin/gpu-profile next
+Icon=battery-profile-balanced
+Terminal=false
+NoDisplay=false
+Categories=Settings;HardwareSettings;
+StartupNotify=false
+X-KDE-Shortcuts=Ctrl+Alt+P

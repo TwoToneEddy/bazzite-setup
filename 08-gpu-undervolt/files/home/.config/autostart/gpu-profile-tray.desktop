@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=GPU profile tray
+Comment=Tray icon showing and switching the active LACT profile
+Exec=/home/lee/.local/bin/gpu-profile-tray
+Icon=battery-profile-balanced
+Terminal=false
+X-GNOME-Autostart-enabled=true

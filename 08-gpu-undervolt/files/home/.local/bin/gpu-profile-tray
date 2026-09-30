@@ -1,0 +1,161 @@
+#!/usr/bin/env python3
+"""gpu-profile-tray - tray icon showing and switching the active LACT profile.
+
+The icon follows the profile: power-saver tinted green for anything named
+UV/Under..., performance tinted red for Overclock/OC..., and the plain
+balanced icon for the rest (Default). It reads
+/dev/shm/gpu-profile.name, which gpu-voltage.service rewrites every second, so it
+also follows a switch made in the LACT GUI or with Ctrl+Alt+P.
+
+Left click and right click both open the menu. A click does not switch on its
+own, unlike the DLSS icon: this one changes clocks and voltage, so it takes a
+deliberate choice. The switching itself is done by ~/.local/bin/gpu-profile.
+"""
+
+import os
+import subprocess
+import sys
+
+from PySide6.QtCore import QTimer
+from PySide6.QtGui import (QAction, QActionGroup, QColor, QCursor, QIcon,
+                           QPainter, QPixmap)
+from PySide6.QtWidgets import QApplication, QMenu, QSystemTrayIcon
+
+HOME = os.path.expanduser("~")
+GPU_PROFILE = os.path.join(HOME, ".local/bin/gpu-profile")
+SHM = "/dev/shm/gpu-profile.name"
+
+
+def icon_name(profile):
+    p = profile.lower()
+    if "uv" in p or "under" in p:
+        return "battery-profile-powersave"
+    if "overclock" in p or p.startswith("oc"):
+        return "battery-profile-performance"
+    return "battery-profile-balanced"
+
+
+# Tints per icon; an icon not listed here keeps the theme's own colour.
+TINT = {
+    "battery-profile-powersave": QColor("#2ecc40"),    # UV: green
+    "battery-profile-performance": QColor("#ff3b30"),  # overclock: red
+}
+
+
+def make_icon(profile):
+    """The theme icon for this profile, recoloured if it has a tint.
+
+    SourceIn paints the colour only where the icon already has pixels, so the
+    shape survives and only its colour changes. Done per size, because Breeze
+    draws different artwork for 16/22 px than for the larger sizes.
+    """
+    name = icon_name(profile)
+    base = QIcon.fromTheme(name, QIcon.fromTheme("speedometer"))
+    tint = TINT.get(name)
+    if tint is None or base.isNull():
+        return base
+    out = QIcon()
+    for size in (16, 22, 24, 32, 48, 64):
+        pm = base.pixmap(size, size)
+        if pm.isNull():
+            continue
+        img = QPixmap(pm.size())
+        img.setDevicePixelRatio(pm.devicePixelRatio())
+        img.fill(QColor(0, 0, 0, 0))
+        p = QPainter(img)
+        p.drawPixmap(0, 0, pm)
+        p.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceIn)
+        p.fillRect(img.rect(), tint)
+        p.end()
+        out.addPixmap(img)
+    return out
+
+
+def read_current():
+    try:
+        with open(SHM) as fh:
+            return fh.read().strip() or "?"
+    except OSError:
+        return "?"
+
+
+def list_profiles():
+    try:
+        out = subprocess.run(["lact", "cli", "profile", "list"],
+                             capture_output=True, text=True, timeout=5).stdout
+    except (OSError, subprocess.TimeoutExpired):
+        return []
+    return [l.strip() for l in out.splitlines() if l.strip()]
+
+
+class Tray:
+    def __init__(self, app):
+        self.app = app
+        self.current = None
+        self.tray = QSystemTrayIcon()
+        self.menu = QMenu()
+        self.menu.aboutToShow.connect(self.build_menu)
+        self.tray.setContextMenu(self.menu)
+        self.tray.activated.connect(self.on_activated)
+
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.refresh)
+        self.timer.start(1000)
+        self.refresh()
+        self.tray.show()
+
+    def build_menu(self):
+        # Rebuilt on every open, so a profile added in the GUI turns up here.
+        self.menu.clear()
+        group = QActionGroup(self.menu)
+        for name in list_profiles():
+            act = QAction(make_icon(name), name, self.menu)
+            act.setCheckable(True)
+            act.setChecked(name == self.current)
+            act.triggered.connect(lambda _=False, n=name: self.switch(n))
+            group.addAction(act)
+            self.menu.addAction(act)
+        self.menu.addSeparator()
+        act_quit = QAction("Quit", self.menu)
+        act_quit.triggered.connect(self.app.quit)
+        self.menu.addAction(act_quit)
+
+    def refresh(self):
+        cur = read_current()
+        if cur == self.current:
+            return
+        self.current = cur
+        self.tray.setIcon(make_icon(cur))
+        self.tray.setToolTip(f"GPU profile: {cur}\nClick to choose. Ctrl+Alt+P cycles.")
+
+    def on_activated(self, reason):
+        if reason == QSystemTrayIcon.ActivationReason.Trigger:
+            self.menu.popup(QCursor.pos())
+
+    def switch(self, name):
+        # gpu-profile posts the notification and updates the shm file.
+        r = subprocess.run([GPU_PROFILE, "set", name], capture_output=True, text=True)
+        if r.returncode != 0:
+            self.tray.showMessage("Could not switch GPU profile",
+                                  (r.stderr or r.stdout).strip() or name,
+                                  QSystemTrayIcon.MessageIcon.Critical, 6000)
+        self.refresh()
+
+
+def main():
+    app = QApplication(sys.argv)
+    app.setApplicationName("GPU Profile")
+    app.setDesktopFileName("gpu-profile-tray")
+    app.setQuitOnLastWindowClosed(False)
+    if not QSystemTrayIcon.isSystemTrayAvailable():
+        print("gpu-profile-tray: no system tray on this session", file=sys.stderr)
+        return 1
+    # Keep a reference: PySide holds bound-method connections weakly, so an
+    # unreferenced Tray is garbage-collected at once and its icon vanishes
+    # without an error.
+    tray = Tray(app)  # noqa: F841
+    return app.exec()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

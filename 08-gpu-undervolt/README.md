@@ -12,7 +12,10 @@ full set.
 | `~/LACT-profile-UV1.json`, `~/LACT-profile-UV2.json` | exported profiles, for importing in the GUI |
 | `~/.local/bin/gpu-voltage` | publishes the GPU core voltage, read from LACT, for the overlay |
 | `~/.config/systemd/user/gpu-voltage.service` | runs the above |
-| `~/.config/MangoHud/bazzite-setup.d/20-voltage.conf` | the overlay's VOLTAGE row; see `02-mangohud-overlay` |
+| `~/.config/MangoHud/bazzite-setup.d/20-voltage.conf` | the overlay's VOLTAGE and PROFILE rows; see `02-mangohud-overlay` |
+| `~/.local/bin/gpu-profile` | switch LACT profiles from a shell: `list`, `set NAME`, `next` |
+| `~/.local/bin/gpu-profile-tray` + autostart entry | tray icon showing the active profile; click for a menu |
+| `~/.local/share/applications/gpu-profile-next.desktop` | bound to **Ctrl+Alt+P**, cycles to the next profile |
 
 Needs `lact` layered — `04-prerequisites`.
 
@@ -31,9 +34,29 @@ has no `lact` binary inside it.
 Installing this component adds the row to `MangoHud.conf`. That does not activate
 the undervolt.
 
+## Switching profiles without the GUI
+
+```bash
+gpu-profile list          # * marks the active one
+gpu-profile set UV1
+gpu-profile next          # what Ctrl+Alt+P runs
+```
+
+The tray icon shows the active profile (green power-saver icon for `UV*`, red performance
+for `Overclock*`/`OC*`, balanced otherwise) and follows switches made anywhere,
+including the LACT GUI. A click opens a menu rather than switching, because a
+switch changes clocks and voltage immediately, game running or not. The hotkey keeps
+off the Windows (Meta) key on purpose.
+
+The overlay's PROFILE row and the tray both read `/dev/shm/gpu-profile.name`,
+which `gpu-voltage.service` refreshes every second.
+
+The installer keeps whichever profile is active: `config.yaml` here says
+`current_profile: null`, and the live value is carried over the copy.
+
 ## The profile
 
-The live config carries a profile named **`UV`** with `max_core_clock: 2851` and a
+The live config carries **`UV1`** (the undervolt) and **`Overclock1`** (+200 MHz core, +6000 MHz memory). UV1 has `max_core_clock: 2851` and a
 full per-point voltage/frequency curve. The GUI shows it under **Overclocking**,
 and `current_profile` at the top of `config.yaml` says which one is active. The
 daemon logs the one it picked at startup:

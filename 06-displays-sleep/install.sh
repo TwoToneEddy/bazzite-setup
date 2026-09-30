@@ -20,15 +20,12 @@ else
     else
         printf '\n[services][displays-sleep.desktop]\n_launch=Pause\n' >> "$rc"
         ok "bound         Pause -> displays-sleep"
-        # kglobalaccel keeps its own copy in memory; ask it to re-read.
-        # Careful: a wrong-arity call on org.kde.KGlobalAccel crashes kwin_wayland and
-        # takes every XWayland app with it. reloadConfig takes no arguments.
-        if q=$(qdbus_cmd); then
-            "$q" org.kde.kglobalaccel /kglobalaccel org.kde.KGlobalAccel.reloadConfig \
-                >/dev/null 2>&1 || warn "kglobalaccel did not reload - log out and back in"
-        else
-            warn "no qdbus available - log out and back in for the key to take effect"
-        fi
+        # There is no live reload: this Plasma's KGlobalAccel has no reloadConfig
+        # method (introspected). The binding also ships as
+        # ~/.local/share/kglobalaccel/displays-sleep.desktop (X-KDE-Shortcuts),
+        # which kglobalacceld reads at login.
+        warn "Pause takes effect after logging out and back in, or set it now in"
+        warn "System Settings -> Shortcuts -> Add New -> Application -> Sleep Displays."
     fi
 fi
 
