@@ -28,7 +28,17 @@ for pkg in coolercontrol lact liquidctl gamescope-session-steam; do
 done
 if [ "${#missing[@]}" -gt 0 ]; then
     echo
-    echo "  Layer them, then reboot - this installer will not do it for you:"
+    echo "  Layer them, then reboot - this installer will not do it for you."
+    copr_missing=0
+    for pkg in "${missing[@]}"; do
+        case $pkg in coolercontrol|lact) copr_missing=1 ;; esac
+    done
+    if [ "$copr_missing" = 1 ]; then
+        echo "  coolercontrol and lact are not in Fedora's repos; add their COPRs first:"
+        echo "    F=\$(rpm -E %fedora)"
+        echo "    sudo curl -fLo /etc/yum.repos.d/_copr_codifryed-CoolerControl.repo https://copr.fedorainfracloud.org/coprs/codifryed/CoolerControl/repo/fedora-\$F/codifryed-CoolerControl-fedora-\$F.repo"
+        echo "    sudo curl -fLo /etc/yum.repos.d/_copr_ilyaz-LACT.repo https://copr.fedorainfracloud.org/coprs/ilyaz/LACT/repo/fedora-\$F/ilyaz-LACT-fedora-\$F.repo"
+    fi
     echo "    sudo rpm-ostree install ${missing[*]}"
     echo "    sudo systemctl reboot"
 fi

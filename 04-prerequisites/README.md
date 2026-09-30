@@ -17,6 +17,21 @@ These are not files, so the installer only checks for them and tells you the
 command; layering triggers a reboot and that is not something an installer should
 do behind your back.
 
+`coolercontrol` and `lact` are **not in Fedora's repos** — they come from COPR,
+and without these two repo files `rpm-ostree` fails with
+`Packages not found: coolercontrol, lact`. Add them first (`-f` makes curl fail
+rather than save a 404 page if a COPR has no build for this Fedora release yet):
+
+```bash
+F=$(rpm -E %fedora)
+sudo curl -fLo /etc/yum.repos.d/_copr_codifryed-CoolerControl.repo \
+  https://copr.fedorainfracloud.org/coprs/codifryed/CoolerControl/repo/fedora-$F/codifryed-CoolerControl-fedora-$F.repo
+sudo curl -fLo /etc/yum.repos.d/_copr_ilyaz-LACT.repo \
+  https://copr.fedorainfracloud.org/coprs/ilyaz/LACT/repo/fedora-$F/ilyaz-LACT-fedora-$F.repo
+```
+
+The repo files are in `/etc`, so they are per-deployment like the rest of it.
+
 ```bash
 sudo rpm-ostree install coolercontrol lact liquidctl gamescope-session-steam
 sudo systemctl reboot
