@@ -171,12 +171,16 @@ apply() {
     # fullscreen windows only, which is what you want on an OLED - always-on can
     # make the panel flicker on a mostly-static desktop.
     [ "$primary" = "$AOC_OUT" ] && args+=("output.${primary}.vrrpolicy.automatic")
-    # The TV is the exception: "always". Games are often played windowed on it,
-    # and without VRR a window runs at a fixed 120Hz, so the 116 fps limiter
-    # repeats a frame four times a second - visible judder. The cost is the OLED
-    # flicker above, now possible outside fullscreen too; if it shows, change
-    # this back to automatic.
-    [ "$primary" = "$TV_OUT" ] && args+=("output.${primary}.vrrpolicy.always")
+    # The TV: recorded from the live setup on 2026-09-30 - VRR automatic, scale
+    # 100%, HDR + wide colour gamut on, SDR brightness 570 nits. Stating them
+    # here means a stray change in System Settings is undone by the next switch.
+    # (Peak-brightness override and gamut wideness have no kscreen-doctor verb;
+    # those stay in kwinoutputconfig.json.)
+    [ "$primary" = "$TV_OUT" ] && args+=("output.${primary}.vrrpolicy.automatic"
+                                         "output.${primary}.scale.1"
+                                         "output.${primary}.hdr.enable"
+                                         "output.${primary}.wcg.enable"
+                                         "output.${primary}.sdr-brightness.570")
     if [ -n "$second" ]; then
         args+=("output.${second}.enable"
                "output.${second}.mode.${sid}"
