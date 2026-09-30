@@ -24,9 +24,9 @@ those components own what feeds them:
 
 | Piece | From | Rows |
 |---|---|---|
-| `10-overlay.conf`, `30-cpu-fps.conf`, `90-limiter.conf` | here | everything else |
-| `20-voltage.conf` | `08-gpu-undervolt` | VOLTAGE, fed by `gpu-voltage` through LACT |
-| `50-pins.conf` | `05-per-pin-current` | the six 12V-2x6 pin currents |
+| `10-overlay.conf`, `22-vram.conf`, `30-cpu-fps.conf`, `90-limiter.conf` | here | everything else |
+| `20-voltage.conf` | `08-gpu-undervolt` | the LACT row under the GPU row - profile and core voltage (`LACT  UV1  1060mV`), fed by `gpu-voltage` |
+| `35-pins.conf` | `05-per-pin-current` | the six 12V-2x6 pin currents, one per row under the frametime graph |
 
 Each of those installers copies its piece into `~/.config/MangoHud/bazzite-setup.d/`
 and joins every piece there, in name order, into `MangoHud.conf`. So stage 1 gets
@@ -85,7 +85,7 @@ CPU group `0080C0`, framerate group `C08080`, values white.
 | What | Where |
 |---|---|
 | which items show | one line each in the pieces under `files/home/.config/MangoHud/bazzite-setup.d/`. Delete or comment a line, then re-run `./install.sh`. |
-| order on screen | **the order blocks appear in the assembled file**, which is the pieces in name order. To put the 12V-2x6 rows at the top, give `50-pins.conf` a name that sorts before the GPU block — which means splitting `10-overlay.conf` there. Verified by screenshot. |
+| order on screen | **the order blocks appear in the assembled file**, which is the pieces in name order. `20-voltage.conf` and `22-vram.conf` sit in the GPU group because they sort between `10-overlay.conf` and `30-cpu-fps.conf`; `35-pins.conf` sits under the frametime graph, after the FPS limit row. To put a piece above the GPU block, split `10-overlay.conf` between its appearance settings and the GPU block. Verified by screenshot. |
 | position | `position=` — `top-left`, `top-center`, `top-right`, `middle-left`, `middle-right`, `bottom-left`, `bottom-center`, `bottom-right`. Or `Shift+F11` in-game with no editing. |
 | font, size, colours | `font_size`, `*_color` |
 | FPS cap | `fps_limit=<cap>,0` — `Shift+F1` toggles between the cap and unlimited. The cap is per screen (AOC 250, TV 116, Dell 59), written by `display-profile` (`01`); the piece holds the AOC's as the default. `fps_limit_method=early` for even frame pacing on VRR, and `show_fps_limit` puts the active cap on the overlay. |

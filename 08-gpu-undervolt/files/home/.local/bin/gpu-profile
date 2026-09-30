@@ -12,7 +12,7 @@
 # but each profile has to be stable on its own for that to be safe.
 #
 # After a switch it writes /dev/shm/gpu-profile.name at once, so the overlay's
-# PROFILE row does not lag by up to a second behind gpu-voltage.service, and
+# LACT row does not lag by up to a second behind gpu-voltage.service, and
 # posts a desktop notification, which is the only feedback a hotkey gives.
 set -euo pipefail
 

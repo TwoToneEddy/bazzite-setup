@@ -49,4 +49,11 @@ if [ "${DRY_RUN:-0}" != 1 ]; then
 fi
 
 say "overlay rows"
+# 50-pins.conf was the old labelled layout, from before the overlay became
+# a five-column table. Left behind, it would draw every pin twice.
+old="$MANGOHUD_PARTS/50-pins.conf"
+if [ -e "$old" ]; then
+    run rm -f "$old"
+    [ "${DRY_RUN:-0}" = 1 ] || ok "removed       $old (replaced by 35-pins.conf)"
+fi
 assemble_mangohud

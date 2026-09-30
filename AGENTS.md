@@ -342,7 +342,7 @@ finds what each component needs.
 
 **The overlay is assembled, not copied.** MangoHud reads one file, but its rows
 belong to different components: `02` installs the base overlay, `05` the 12V-2x6
-rows, `08` the VOLTAGE row, each as a piece in `~/.config/MangoHud/bazzite-setup.d/`.
+rows, `08` the LACT row (profile + voltage), each as a piece in `~/.config/MangoHud/bazzite-setup.d/`.
 Every one of those installers joins the pieces into `MangoHud.conf`. So a row exists
 only while its component is installed, and an edit to the live `MangoHud.conf` is
 lost at the next reassembly — edit the piece in `NN-*/files/` instead.

@@ -24,7 +24,7 @@ The container also has no `lact` binary, which is the second reason MangoHud
 cannot just run the command itself.
 
 It also publishes the active LACT profile name to /dev/shm/gpu-profile.name,
-for the overlay's PROFILE row and the gpu-profile tray icon. That way a switch
+for the overlay's LACT row and the gpu-profile tray icon. That way a switch
 made in the LACT GUI shows up too, not only one made with gpu-profile.
 
   gpu-voltage --daemon    loop, publishing the voltage (this is the service)
@@ -78,7 +78,8 @@ def write(path, text):
 
 
 def publish(mv):
-    write(OUT, f"{mv} mV" if mv is not None else "--")
+    # "1060mV" - no space, so it fits the overlay's column.
+    write(OUT, f"{mv}mV" if mv is not None else "--")
 
 
 def daemon():

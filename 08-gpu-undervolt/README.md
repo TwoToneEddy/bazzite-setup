@@ -12,14 +12,14 @@ full set.
 | `~/LACT-profile-UV1.json`, `~/LACT-profile-UV2.json` | exported profiles, for importing in the GUI |
 | `~/.local/bin/gpu-voltage` | publishes the GPU core voltage, read from LACT, for the overlay |
 | `~/.config/systemd/user/gpu-voltage.service` | runs the above |
-| `~/.config/MangoHud/bazzite-setup.d/20-voltage.conf` | the overlay's VOLTAGE and PROFILE rows; see `02-mangohud-overlay` |
+| `~/.config/MangoHud/bazzite-setup.d/20-voltage.conf` | the overlay's LACT row under the GPU row: `LACT  UV1  1060mV`; see `02-mangohud-overlay` |
 | `~/.local/bin/gpu-profile` | switch LACT profiles from a shell: `list`, `set NAME`, `next` |
 | `~/.local/bin/gpu-profile-tray` + autostart entry | tray icon showing the active profile; click for a menu |
 | `~/.local/share/applications/gpu-profile-next.desktop` | bound to **Ctrl+Alt+P**, cycles to the next profile |
 
 Needs `lact` layered — `04-prerequisites`.
 
-## The overlay's VOLTAGE row
+## The overlay's voltage
 
 It lives here rather than in `02` because it reads from `lactd`, which this
 component runs. MangoHud reads NVIDIA cards through NVML, and this driver has no
@@ -27,11 +27,14 @@ voltage API — no voltage symbol in `libnvidia-ml.so.1` at all, and
 `nvidia-smi -q -d VOLTAGE` prints an empty section — so MangoHud's own
 `gpu_voltage` would be a permanent `0 mV`. LACT gets the figure through NvAPI, so
 `gpu-voltage.service` asks it once a second and publishes to
-`/dev/shm/gpu-voltage.mv`, which the overlay `cat`s. One stats query costs ~16 ms,
+`/dev/shm/gpu-voltage.mv` (as `1060mV`), which the overlay `cat`s into the LACT
+row under the GPU row - `LACT  UV1  1060mV`, profile then voltage.
+MangoHud 0.8.4 ends the GPU row with a hard break, so the row itself cannot take
+it. One stats query costs ~16 ms,
 fine once a second and absurd at the overlay's refresh rate, and Steam's container
 has no `lact` binary inside it.
 
-Installing this component adds the row to `MangoHud.conf`. That does not activate
+Installing this component adds the LACT row to `MangoHud.conf`. That does not activate
 the undervolt.
 
 ## Switching profiles without the GUI
@@ -48,7 +51,7 @@ including the LACT GUI. A click opens a menu rather than switching, because a
 switch changes clocks and voltage immediately, game running or not. The hotkey keeps
 off the Windows (Meta) key on purpose.
 
-The overlay's PROFILE row and the tray both read `/dev/shm/gpu-profile.name`,
+The overlay's LACT row and the tray both read `/dev/shm/gpu-profile.name`,
 which `gpu-voltage.service` refreshes every second.
 
 The installer keeps whichever profile is active: `config.yaml` here says

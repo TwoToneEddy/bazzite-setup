@@ -136,7 +136,7 @@ check() {
         08-gpu-undervolt)
             if ! active lactd; then state=partial; detail="lactd not active"
             elif ! user_active gpu-voltage; then state=partial; detail="user service not active: gpu-voltage"
-            elif ! grep -q 'gpu-voltage\.mv' "$MANGO_CONF" 2>/dev/null; then state=partial; detail="VOLTAGE row not in MangoHud.conf - re-run 02-mangohud-overlay/install.sh"
+            elif ! grep -q 'gpu-voltage\.mv' "$MANGO_CONF" 2>/dev/null; then state=partial; detail="LACT row not in MangoHud.conf - re-run 02-mangohud-overlay/install.sh"
             else
                 local cur; cur=$(sudo -n grep -m1 '^current_profile:' /etc/lact/config.yaml 2>/dev/null | awk '{print $2}')
                 if [ "${cur:-null}" = null ]; then state=partial; detail="profile defined but NOT active (current_profile: null)"

@@ -15,9 +15,9 @@
  * Given -o /dev/shm/astral-pins it writes one file per pin plus a summary:
  *
  *   /dev/shm/astral-pins        8.12 8.03 7.94 8.20 8.31 7.85  =48.4A
- *   /dev/shm/astral-pins.pin1   8.12
+ *   /dev/shm/astral-pins.pin1   8.120 A
  *   ...
- *   /dev/shm/astral-pins.pin6   7.85 !!        <- this pin is over the limit
+ *   /dev/shm/astral-pins.pin6   7.850 A !!        <- this pin is over the limit
  *
  * One file per pin because MangoHud renders only the LAST line an `exec`
  * command prints, so a row can only ever carry one file's worth of text.
@@ -215,7 +215,7 @@ static void format_summary(const struct pin *pins, char *buf, size_t len)
 /* One overlay row: just this pin, with the marker on the pin that is over. */
 static void format_pin(const struct pin *pins, int i, char *buf, size_t len)
 {
-    snprintf(buf, len, "%.2f%s", pins[i].amps,
+    snprintf(buf, len, "%.3f A%s", pins[i].amps,
              pins[i].amps >= opt_warn ? " !!" : "");
 }
 

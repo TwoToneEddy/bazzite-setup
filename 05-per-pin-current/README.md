@@ -17,7 +17,7 @@ useful, and `astral-pins --probe` will tell you so.
 | `/usr/local/bin/astral-pins` | built from it by `install.sh` |
 | `/usr/local/bin/astral-pins-alarm` | what the daemon runs when a pin goes over |
 | `/etc/systemd/system/astral-pins.service` | the daemon, warn-only |
-| `~/.config/MangoHud/bazzite-setup.d/50-pins.conf` | the overlay's six 12V-2x6 rows, joined into `MangoHud.conf`; see `02-mangohud-overlay` |
+| `~/.config/MangoHud/bazzite-setup.d/35-pins.conf` | the overlay's six 12V-2x6 rows, one pin each under the frametime graph, joined into `MangoHud.conf`; see `02-mangohud-overlay` |
 
 Needs `04-prerequisites` first, for `i2c-dev`.
 
@@ -45,8 +45,18 @@ It publishes plain text to tmpfs and the overlay just reads files:
 
 ```
 /dev/shm/astral-pins        8.12 8.03 7.94 8.20 8.31 7.85  =48.4A    for scripts
-/dev/shm/astral-pins.pin1   8.12                                     one overlay row each
-/dev/shm/astral-pins.pin6   7.85 !!                                  over the limit
+/dev/shm/astral-pins.pin1   8.120 A                                  one overlay row each
+/dev/shm/astral-pins.pin6   7.850 A !!                               over the limit
+```
+
+In the overlay they are six chunky rows under the frametime graph, pin 1 at the
+top and no labels, copied from the Windows Afterburner OSD:
+
+```
+7.260 A
+6.940 A
+ ...
+9.210 A !!
 ```
 
 **`/dev/shm`, not `/run`, and this matters.** Steam runs games inside a
@@ -68,8 +78,8 @@ sudo systemctl restart astral-pins
 
 ## The alarm
 
-Crossing **9.0 A** on any pin does three things at once: `!!` appears on that
-pin's overlay row, a line goes in the journal, and the service runs
+Crossing **9.0 A** on any pin does three things at once: `!!` appears after that
+pin's value in the overlay, a line goes in the journal, and the service runs
 `astral-pins-alarm`, which puts a *critical* desktop notification and **four alarm
 tones** into your session. It repeats every 30 s while the condition lasts and
 plays a single chime with an "all clear" when the current drops back.
