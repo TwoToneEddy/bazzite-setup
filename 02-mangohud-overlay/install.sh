@@ -37,4 +37,4 @@ fi
 
 echo
 echo "  In a running game, press Shift_L+F4 to reload the config; '/' toggles the overlay."
-echo "  Shift_L+F1 cycles the FPS limit: 276, 59, 115, 280, unlimited, 240, 144, 120, 60."
+echo "  Shift_L+F1 toggles the FPS limit between the primary screen's cap and unlimited."

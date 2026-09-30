@@ -28,6 +28,16 @@ display-profile status        # what is on, at what mode
 display-profile gaming --no-limiter   # skip re-pinning the refresh rate
 ```
 
+## Each profile sets the FPS limiter
+
+Switching profile sets MangoHud's `fps_limit=` for the primary screen, from the
+`*_CAP` constants at the top of `display-profile`: 250 for the AOC, 116 for the
+TV, 59 for the Dell. The list is always `<cap>,0`, so Shift_L+F1 toggles between
+the cap and unlimited. Reassembling `MangoHud.conf` (the `02`, `05` and `08`
+installers) puts back the default of 250 until you next switch profile. The new
+cap only reaches games started afterwards. A game that is already running keeps
+its old cap until you press Shift_L+F4 in it.
+
 ## Hardware-specific
 
 **This is the component most tied to this machine.** Output names

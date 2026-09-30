@@ -26,6 +26,6 @@ cat <<'EOF'
   Still needs you:
     - log out and back in: 95-gaming.conf and the KWin output config load at login
     - per game, Steam -> Properties -> Compatibility -> GE-Proton, or HDR is ignored
-    - in a game: '/' shows the overlay, Shift_L+F1 cycles the FPS limit,
+    - in a game: '/' shows the overlay, Shift_L+F1 toggles the FPS limit,
       left-click the DLSS tray icon to toggle the indicator
 EOF

@@ -28,10 +28,11 @@
 #     exactly what the Dell's only mode is.
 #
 #   * The Windows version flipped the RTSS limiter on. The equivalent here is
-#     MangoHud's frame limiter: each profile puts its own refresh rate at the
-#     front of fps_limit= in MangoHud.conf, so newly launched games are capped
-#     at the refresh rate of the screen they are actually running on. Pass
-#     --no-limiter to leave MangoHud.conf alone.
+#     MangoHud's frame limiter: each profile writes its primary screen's cap
+#     (the *_CAP values below) to fps_limit= in MangoHud.conf, so newly
+#     launched games are capped for the screen they are actually running on.
+#     The list is just "<cap>,0", so Shift_L+F1 toggles between that cap and
+#     unlimited. Pass --no-limiter to leave MangoHud.conf alone.
 #
 set -uo pipefail
 
@@ -42,6 +43,13 @@ set -uo pipefail
 AOC_OUT="DP-4"          ; AOC_SIG="2560x1440"    # AOCA610  - AOC AG276QZD2
 DELL_OUT="HDMI-A-3"     ; DELL_SIG="1920x1200"   # DELF048  - Dell U2413
 TV_OUT="HDMI-A-2"       ; TV_SIG="3840x2160"     # PHL0B82  - Philips 48OLED707
+
+# MangoHud frame limit per screen, applied by whichever profile makes it primary.
+# The TV keeps a few frames of headroom under 120 Hz so VRR stays in charge;
+# the Dell is a fixed 59.95 Hz panel.
+AOC_CAP=250
+TV_CAP=116
+DELL_CAP=59
 
 MANGO_CONF="${HOME}/.config/MangoHud/MangoHud.conf"
 KD=kscreen-doctor
@@ -113,18 +121,16 @@ current_mode() {
 
 # --- the MangoHud limiter -----------------------------------------------------
 set_limiter() {
-    local hz="$1" rest new
+    local hz="$1" new
     [ "$LIMITER" = "no" ] && return 0
     [ -f "$MANGO_CONF" ] || { note "  (MangoHud.conf not found, limiter unchanged)"; return 0; }
-    hz=${hz%.*}                       # 59.95 -> 59; MangoHud wants an integer
-    # Sit just under the refresh rate. At exactly the panel maximum the frame
-    # rate keeps bouncing off the VRR ceiling and falls back to plain vsync (or
-    # tears), so the usual practice is a few frames of headroom.
-    [ "$hz" -gt 70 ] 2>/dev/null && hz=$((hz - 4))
-    rest=$(grep '^fps_limit=' "$MANGO_CONF" | head -1 | cut -d= -f2- \
-           | tr ',' '\n' | grep -vx "$hz" | paste -sd, -)
-    new="fps_limit=${hz}${rest:+,$rest}"
-    if grep -q '^fps_limit=' "$MANGO_CONF"; then
+    # Only this screen's cap and unlimited, so Shift_L+F1 is a toggle. A longer
+    # list meant the first press jumped from 276 to 59.
+    new="fps_limit=${hz},0"
+    if grep -qx "$new" "$MANGO_CONF"; then
+        note "  MangoHud frame limiter already ${hz} fps"
+        return 0
+    elif grep -q '^fps_limit=' "$MANGO_CONF"; then
         sed -i "s|^fps_limit=.*|$new|" "$MANGO_CONF"
     else
         printf '%s\n' "$new" >> "$MANGO_CONF"
@@ -201,7 +207,11 @@ apply() {
         [ "$scur" = "$slabel" ] || note "  note: ${second} is at ${scur:-unknown}, wanted ${slabel}"
     fi
     [ "$ok" = yes ] && note "  verified: ${primary} ${cur}${second:+, ${second} on}"
-    set_limiter "${plabel##*@}"
+    case "$primary" in
+        "$AOC_OUT")  set_limiter "$AOC_CAP" ;;
+        "$TV_OUT")   set_limiter "$TV_CAP" ;;
+        "$DELL_OUT") set_limiter "$DELL_CAP" ;;
+    esac
     [ "$ok" = yes ]
 }
 
@@ -266,7 +276,7 @@ ACTION=""
 for a in "$@"; do
     case "$a" in
         --no-limiter) LIMITER=no ;;
-        -h|--help) sed -n '3,35p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        -h|--help) sed -n '3,36p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
         *) ACTION="$a" ;;
     esac
 done
