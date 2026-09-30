@@ -1,7 +1,7 @@
 # 02 — Performance overlay (MangoHud, matched to Afterburner)
 
 The in-game overlay, built to show **exactly** what MSI Afterburner shows on the
-Windows install and nothing more. `/` toggles it, in every game.
+Windows install and nothing more. It starts hidden; `/` shows it, in every game.
 
 ## What it installs
 
@@ -89,7 +89,7 @@ CPU group `0080C0`, framerate group `C08080`, values white.
 | position | `position=` — `top-left`, `top-center`, `top-right`, `middle-left`, `middle-right`, `bottom-left`, `bottom-center`, `bottom-right`. Or `Shift+F11` in-game with no editing. |
 | font, size, colours | `font_size`, `*_color` |
 | FPS cap | `fps_limit=<cap>,0` — `Shift+F1` toggles between the cap and unlimited. The cap is per screen (AOC 250, TV 116, Dell 59), written by `display-profile` (`01`); the piece holds the AOC's as the default. `fps_limit_method=early` for even frame pacing on VRR, and `show_fps_limit` puts the active cap on the overlay. |
-| toggle key | `toggle_hud=slash` |
+| toggle key | `toggle_hud=slash`. `no_display` makes every game start with the overlay hidden - MangoHud keeps no state between launches, so this is the only way to not have it pop up |
 | logging | `autostart_log=` (`0` = off); `Shift+F2` logs on demand |
 
 GOverlay is installed if you would rather edit this in a GUI.
