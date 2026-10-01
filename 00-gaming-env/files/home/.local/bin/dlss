@@ -18,6 +18,13 @@
 # The chosen state is kept in ~/.config/dlss-overlay so that prefixes that do
 # not exist yet can be brought into line by the next toggle.
 #
+# GE-Proton 11 overrides the registry: unless PROTON_DLSS_INDICATOR is set it
+# exports DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS=DLSSIndicator=0,... and dxvk-nvapi
+# writes that over these values at every launch. So each GE-Proton install also
+# gets a user_settings.py that reads ~/.config/dlss-overlay at launch and sets
+# PROTON_DLSS_INDICATOR to match. A newly installed GE-Proton gets it at the
+# next `dlss overlay` (or `dlss status`).
+#
 set -uo pipefail
 
 CONF="${HOME}/.config/environment.d/95-gaming.conf"
@@ -75,6 +82,30 @@ os.replace(tmp, path)
 PY
 }
 
+# user_settings.py for every GE-Proton install. One we did not write is left alone.
+GE_MARK="# written by dlss (bazzite-setup)"
+ge_hook() {
+    local d f
+    for d in "$STEAM"/compatibilitytools.d/*/; do
+        [ -f "$d/proton" ] || continue
+        f="$d/user_settings.py"
+        if [ -e "$f" ] && ! grep -qF "$GE_MARK" "$f"; then
+            printf 'Not touching %s: it is not ours. Set PROTON_DLSS_INDICATOR in it by hand.\n' "$f" >&2
+            continue
+        fi
+        cat > "$f" <<PY
+$GE_MARK - read at every launch; keeps the DLSS indicator
+# in step with ~/.config/dlss-overlay. See: dlss help
+import os
+try:
+    _on = open(os.path.expanduser("~/.config/dlss-overlay")).read().strip() == "on"
+except OSError:
+    _on = False
+user_settings = {"PROTON_DLSS_INDICATOR": "1" if _on else "0"}
+PY
+    done
+}
+
 apply_state() {  # apply_state on|off
     local ind=0 dlssg=0 p run n=0 skipped=()
     [ "$1" = on ] && { ind=1024; dlssg=2; }   # 1024 = DLSS indicator, 2 = DLSS-G
@@ -87,6 +118,7 @@ apply_state() {  # apply_state on|off
         set_reg "$p" "$ind" "$dlssg" && n=$((n + 1))
     done < <(prefixes)
     printf '%s\n' "$1" > "$STATE"
+    ge_hook
     printf 'DLSS debug overlay -> %s (%d prefixes; applies the next time each game starts)\n' "$1" "$n"
     [ ${#skipped[@]} -eq 0 ] ||
         printf 'Skipped, game running: app %s - toggle again after closing it.\n' "${skipped[*]}"
@@ -94,6 +126,7 @@ apply_state() {  # apply_state on|off
 
 # --- commands -----------------------------------------------------------------
 cmd_status() {
+    ge_hook
     printf 'DLSS (global, applied to every Proton game)\n\n'
     printf '  Presets and DLLs   not managed here - RHI sets them\n'
     printf '  Debug overlay      %s\n' "$(state)"
@@ -118,6 +151,6 @@ case "${1:-status}" in
     overlay)           cmd_overlay "${2:-toggle}" ;;
     sr|rr|mfg|fg|launch-options|reset|dlls|dll|versions)
                        die "DLSS presets and DLLs are set with RHI now, not with dlss." ;;
-    -h|--help|help)    sed -n '3,19p' "$0" | sed 's/^# \{0,1\}//' ;;
+    -h|--help|help)    sed -n '3,26p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) die "Unknown command '$1'. Try: dlss help" ;;
 esac

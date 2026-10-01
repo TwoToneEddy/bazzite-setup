@@ -74,3 +74,10 @@ which is the whole reason the tray icon exists.
 
 **The tray needs PySide6.** Bazzite has it; on a bare Fedora,
 `rpm-ostree install python3-pyside6` or run it in a toolbox.
+
+**GE-Proton 11 overwrites the registry at launch.** Unless `PROTON_DLSS_INDICATOR`
+is set, it exports `DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS=DLSSIndicator=0,...` and
+dxvk-nvapi writes that over the prefix's values, so the toggle silently does
+nothing. `dlss` therefore drops a `user_settings.py` into every GE-Proton folder
+that reads `~/.config/dlss-overlay` at launch. A newly installed GE-Proton gets it
+at the next `dlss overlay` or `dlss status`, so toggle once after installing one.
