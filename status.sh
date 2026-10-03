@@ -47,7 +47,7 @@ report() {
 
 # every_file_installed <dir> - true when each file in its files/ tree is in place
 every_file_installed() {
-    local base="$1/files" src rel target missing=0 total=0
+    local base="$1/files" src rel target missing=0 total=0 unknown=0
     [ -d "$base" ] || return 0
     if [ -d "$base/home" ]; then
         while IFS= read -r src; do
@@ -59,14 +59,27 @@ every_file_installed() {
         while IFS= read -r src; do
             rel=${src#"$base/system/"}; target="/$rel"
             total=$((total+1))
-            sudo -n test -e "$target" 2>/dev/null || [ -e "$target" ] || missing=$((missing+1))
+            if [ -e "$target" ] || sudo -n test -e "$target" 2>/dev/null; then :
+            # A parent directory we cannot enter (e.g. /var/lib/plasmalogin, 0750)
+            # makes the file unknowable without root, which is not the same as absent.
+            elif [ ! -x "$(dirname "$target")" ] && ! sudo -n true 2>/dev/null; then unknown=$((unknown+1))
+            else missing=$((missing+1)); fi
         done < <(find "$base/system" -type f)
     fi
-    FILES_TOTAL=$total; FILES_MISSING=$missing
+    FILES_TOTAL=$total; FILES_MISSING=$missing; FILES_UNKNOWN=$unknown
     [ "$missing" = 0 ]
 }
 
 active()      { systemctl is-active --quiet "$1"; }
+
+# root_grep <grep args...> <file> - grep a root-owned file. Read it directly when it
+# is world-readable (/etc/coolercontrol and /etc/lact are), and only fall back to
+# sudo -n otherwise. Relying on sudo -n alone reported "missing" whenever no sudo
+# credential happened to be cached.
+root_grep() {
+    local f="${!#}"
+    if [ -r "$f" ]; then grep "$@"; else sudo -n grep "$@"; fi
+}
 user_active() { systemctl --user is-active --quiet "$1"; }
 
 MANGO_CONF="$HOME/.config/MangoHud/MangoHud.conf"
@@ -74,7 +87,7 @@ MANGO_PARTS="$HOME/.config/MangoHud/bazzite-setup.d"
 
 check() {
     local dir="$1" state detail
-    FILES_TOTAL=0; FILES_MISSING=0
+    FILES_TOTAL=0; FILES_MISSING=0; FILES_UNKNOWN=0
     every_file_installed "$dir"
     if [ "$FILES_TOTAL" -gt 0 ] && [ "$FILES_MISSING" = "$FILES_TOTAL" ]; then
         report "$dir" absent "none of its $FILES_TOTAL files are installed"
@@ -87,6 +100,8 @@ check() {
 
     # Files are in place. Now the part a file check cannot tell you.
     state=ok; detail="installed"
+    local unverified=""
+    [ "$FILES_UNKNOWN" -gt 0 ] && unverified=" ($FILES_UNKNOWN root-only file(s) unverified - sudo -v first)"
     case "$dir" in
         00-gaming-env)
             if grep -q '^MANGOHUD=1' "$HOME/.config/environment.d/95-gaming.conf" 2>/dev/null; then
@@ -127,10 +142,14 @@ check() {
         06-displays-sleep)
             if grep -q '^\[services\]\[displays-sleep.desktop\]' "$HOME/.config/kglobalshortcutsrc" 2>/dev/null; then
                 detail="bound to Pause"
+            # kglobalacceld also reads X-KDE-Shortcuts from here at login; that alone
+            # is enough (verified: Pause blanks the screens with no kglobalshortcutsrc entry).
+            elif grep -q '^X-KDE-Shortcuts=Pause' "$HOME/.local/share/kglobalaccel/displays-sleep.desktop" 2>/dev/null; then
+                detail="bound to Pause (via kglobalaccel desktop file)"
             else state=partial; detail="installed but not bound to a key"; fi ;;
         07-fan-control)
             if ! active coolercontrold; then state=partial; detail="coolercontrold not active"
-            elif sudo -n grep -q 'name = "Main Mix"' /etc/coolercontrol/config.toml 2>/dev/null; then
+            elif root_grep -q 'name = "Main Mix"' /etc/coolercontrol/config.toml 2>/dev/null; then
                 detail="curves present in CoolerControl"
             else state=partial; detail="curves not in CoolerControl - run its install.sh"; fi ;;
         08-gpu-undervolt)
@@ -138,7 +157,7 @@ check() {
             elif ! user_active gpu-voltage; then state=partial; detail="user service not active: gpu-voltage"
             elif ! grep -q 'gpu-voltage\.mv' "$MANGO_CONF" 2>/dev/null; then state=partial; detail="LACT row not in MangoHud.conf - re-run 02-mangohud-overlay/install.sh"
             else
-                local cur; cur=$(sudo -n grep -m1 '^current_profile:' /etc/lact/config.yaml 2>/dev/null | awk '{print $2}')
+                local cur; cur=$(root_grep -m1 '^current_profile:' /etc/lact/config.yaml 2>/dev/null | awk '{print $2}')
                 if [ "${cur:-null}" = null ]; then state=partial; detail="profile defined but NOT active (current_profile: null)"
                 else detail="active profile: $cur"; fi
             fi ;;
@@ -167,7 +186,7 @@ check() {
                 fi
             fi ;;
     esac
-    report "$dir" "$state" "$detail"
+    report "$dir" "$state" "$detail$unverified"
 }
 
 if [ "$PORCELAIN" != 1 ]; then

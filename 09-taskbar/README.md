@@ -19,12 +19,14 @@ Only one line matters.
 | Icon | |
 |---|---|
 | Steam | |
-| **Big Picture (in desktop)** | `bazzite-steam-bpm` — the console interface as a window on this desktop, no logout. Named to distinguish it from the *session* called "Steam Big Picture" at the login screen, which is the real gamescope one. It uses `bazzite-steam-bpm` rather than Steam's own in-client button because switching to BPM from inside the client is known to be sluggish on Bazzite. |
 | Lutris | |
-| **Discord** | the flatpak |
+| Konsole, Bazaar, yafti, Files | |
 | Chrome | the flatpak |
 | **Desk Gaming / Desk Work / TV Mode / Dell Only** | the four `display-profile` layouts (`01`) |
-| Konsole, Files, Bazaar, yafti | |
+| **Discord** | the flatpak, pinned by its flatpak export path |
+
+Big Picture (`bazzite-steam-bpm`, "Big Picture (in desktop)") is no longer pinned.
+There is no `steam-bigpicture.desktop` on this machine any more, so re-pinning it means recreating that launcher first.
 
 The launchers themselves are `.desktop` files in `~/.local/share/applications/`,
 installed by whichever component owns them. This component only sets the order and
