@@ -56,6 +56,23 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 | `.claude/commands/` | `/setup` walks the components one at a time; `/status` reports where you are. They ship with the clone |
 | `common/lib.sh` | shared by every installer |
 | `reference/` | full notes, the original brief, the layered-package list, `health-check.sh` |
+| [`tools/frame-pacing`](tools/frame-pacing/) | read-only running-game limiter audit and MangoHud pacing reports; no installation required, display-delivery timing explicitly unverified |
+
+## Power profile for gaming
+
+KDE exposes Bazzite's **Power Save / Balanced / Performance** profiles in the
+system tray's **Power and Battery** widget. Performance was selected and verified
+on this machine on 2026-10-03. See [the power-profile guide](reference/POWER_PROFILES.md)
+for where to find the control, how to confirm it took effect, and how to return
+to Balanced. This is a manual setting; the installers do not select a profile.
+
+## Wake-on-LAN
+
+Magic-packet wake was enabled for the wired Ethernet connection on 2026-10-03.
+See [the Wake-on-LAN guide](reference/WAKE_ON_LAN.md) for the MAC address,
+commands to reproduce or disable it, and verification steps. The configuration
+is saved and applied; actual wake from sleep or shutdown remains untested.
+This is a manual setting; the installers do not configure it.
 
 ## Moving to a new machine
 
