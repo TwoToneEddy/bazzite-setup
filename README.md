@@ -57,6 +57,7 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 | `common/lib.sh` | shared by every installer |
 | `reference/` | full notes, the original brief, the layered-package list, `health-check.sh` |
 | [`tools/frame-pacing`](tools/frame-pacing/) | read-only running-game limiter audit and MangoHud pacing reports; no installation required, display-delivery timing explicitly unverified |
+| [`tools/hunt-diagnostics`](tools/hunt-diagnostics/) | Hunt/ARC freeze investigation, capture scripts and handoff notes; large raw captures are local and Git-ignored |
 
 ## Power profile for gaming
 
@@ -177,7 +178,9 @@ done
 
 ## Version control
 
-All of it is safe to commit — nothing here holds a secret. `git init && git add
+The setup configuration and diagnostic scripts can be committed. Raw captures
+under `tools/hunt-diagnostics` are excluded by its `.gitignore`: they are large
+and may contain process, network and game-session details. `git init && git add
 -A` in this directory is the whole story. Two things deliberately **not** in
 here: anything under `~/.local/share/Steam` (session tokens) and the full Plasma
 panel config (huge, churns constantly, and Plasma rewrites it — only the

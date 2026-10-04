@@ -370,3 +370,9 @@ and why, and what you deliberately left for the user, including the undervolt. I
 `health-check.sh` reports a FAIL you could not resolve, quote it rather than
 summarising it. Do not describe a component as working because its installer
 succeeded.
+
+## Hunt / ARC Raiders freeze investigation
+
+For this investigation, start with `tools/hunt-diagnostics/HANDOFF.md`, then
+`REPORT.md` and `NEXT-TEST.md` in that directory. Capture data is local and
+Git-ignored. This is a diagnostic toolset, not an install-all component.

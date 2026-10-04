@@ -1,0 +1,7 @@
+# Local captures and generated results; retain scripts and investigation notes.
+/20*/
+/proton-logs/
+/__pycache__/
+/latest.txt
+/analysis-output.txt
+*.pyc
