@@ -12,7 +12,7 @@ rc="$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc"
 [ -r "$rc" ] || die "no Plasma panel config at $rc"
 
 live=$(grep -m1 '^launchers=' "$rc" || true)
-mine=$(cat panel-launchers.txt)
+mine=$(cat "$COMPONENT_DIR/panel-launchers.txt")
 
 if [ "$live" = "$mine" ]; then
     ok "the panel row already matches panel-launchers.txt"
@@ -38,18 +38,21 @@ echo "${mine#launchers=}" | tr ',' '\n' | while read -r l; do
     esac
 done
 
-cat <<'END'
+# The paths are absolute: these get pasted from wherever the shell happens to be,
+# and a relative panel-launchers.txt that cat cannot find made sed replace the
+# row with nothing - the whole taskbar launcher list gone, with no error.
+cat <<END
 
   To make the live panel match the recorded row - note the STOP first, it matters:
 
     systemctl --user stop plasma-plasmashell.service
-    sed -i "s|^launchers=.*|$(cat panel-launchers.txt)|" \
-        ~/.config/plasma-org.kde.plasma.desktop-appletsrc
+    row=\$(cat $COMPONENT_DIR/panel-launchers.txt) && [ -n "\$row" ] && \\
+        sed -i "s|^launchers=.*|\$row|" ~/.config/plasma-org.kde.plasma.desktop-appletsrc
     systemctl --user start plasma-plasmashell.service
 
   Or, going the other way - you have arranged the panel by dragging icons and want
   to record that here:
 
-    grep -m1 '^launchers=' ~/.config/plasma-org.kde.plasma.desktop-appletsrc \
-        > panel-launchers.txt
+    grep -m1 '^launchers=' ~/.config/plasma-org.kde.plasma.desktop-appletsrc \\
+        > $COMPONENT_DIR/panel-launchers.txt
 END
