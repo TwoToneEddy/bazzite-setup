@@ -33,7 +33,7 @@ sudo curl -fLo /etc/yum.repos.d/_copr_ilyaz-LACT.repo \
 The repo files are in `/etc`, so they are per-deployment like the rest of it.
 
 ```bash
-sudo rpm-ostree install coolercontrol lact liquidctl gamescope-session-steam
+sudo rpm-ostree install coolercontrol lact liquidctl
 sudo systemctl reboot
 ```
 
@@ -42,7 +42,7 @@ sudo systemctl reboot
 | `coolercontrol` | fan control (`07`) |
 | `lact` | GPU undervolt, and the voltage reading the overlay uses (`08`) |
 | `liquidctl` | lets CoolerControl see AIO pumps |
-| `gamescope-session-steam` | the SteamOS-style Game Mode session at the login screen |
+| ~~`gamescope-session-steam`~~ | **not installed** — deliberately left out; this machine runs without the Game Mode session |
 
 MangoHud and GOverlay ship with Bazzite already. The snapshot of what was layered
 when this was built is in `../reference/layered-packages.txt`.

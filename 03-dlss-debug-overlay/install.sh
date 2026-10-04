@@ -10,9 +10,20 @@ say "tray, toggle, desktop entry and icons"
 install_tree
 refresh_desktop_caches
 
-if ! python3 -c 'import PySide6' 2>/dev/null; then
-    warn "PySide6 is missing, so the tray icon cannot start."
-    warn "  sudo rpm-ostree install python3-pyside6   (then reboot)"
+# The tray needs PySide6. Bazzite 44 has it; 43 does not. Rather than layer
+# python3-pyside6, give the tray a private venv - the tray re-runs itself under it.
+say "PySide6 for the tray"
+venv="$HOME/.local/share/dlss-overlay-tray/venv"
+if python3 -c 'import PySide6' 2>/dev/null; then
+    ok "system python has it"
+elif "$venv/bin/python" -c 'import PySide6' 2>/dev/null; then
+    ok "unchanged     private venv at $venv"
+elif [ "${DRY_RUN:-0}" = 1 ]; then
+    echo "  would  create $venv and pip install PySide6 (~650 MB)"
+else
+    python3 -m venv "$venv"
+    "$venv/bin/pip" install -q PySide6
+    ok "installed     PySide6 into $venv"
 fi
 
 say "starting the tray"

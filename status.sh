@@ -128,11 +128,11 @@ check() {
             for m in nct6775 i2c_dev; do
                 grep -q "^$m " <<<"$(lsmod)" || miss="$miss $m"
             done
-            for p in coolercontrol lact liquidctl gamescope-session-steam; do
+            for p in coolercontrol lact liquidctl; do
                 rpm -q "$p" >/dev/null 2>&1 || miss="$miss $p"
             done
             if [ -n "$miss" ]; then state=partial; detail="not loaded/layered:$miss"
-            else detail="modules loaded, 4 packages layered"; fi ;;
+            else detail="modules loaded, 3 packages layered"; fi ;;
         05-per-pin-current)
             if [ ! -x /usr/local/bin/astral-pins ]; then state=partial; detail="binary not built"
             elif ! active astral-pins; then state=partial; detail="astral-pins.service not active"

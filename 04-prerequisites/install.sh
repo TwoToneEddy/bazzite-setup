@@ -18,7 +18,7 @@ done
 
 say "layered packages"
 missing=()
-for pkg in coolercontrol lact liquidctl gamescope-session-steam; do
+for pkg in coolercontrol lact liquidctl; do  # gamescope-session-steam deliberately not layered
     if rpm -q "$pkg" >/dev/null 2>&1; then
         ok "layered       $pkg"
     else

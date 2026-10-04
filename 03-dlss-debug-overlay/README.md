@@ -72,8 +72,11 @@ it is closed.
 That is correct behaviour and harmless; it is just only visible after a relogin,
 which is the whole reason the tray icon exists.
 
-**The tray needs PySide6.** Bazzite has it; on a bare Fedora,
-`rpm-ostree install python3-pyside6` or run it in a toolbox.
+**The tray needs PySide6.** Bazzite 44 ships it; Bazzite 43 does not. When the
+system Python lacks it, `install.sh` creates a private venv at
+`~/.local/share/dlss-overlay-tray/venv` and `pip install`s PySide6 there (~650 MB,
+no layering, no reboot), and the tray re-runs itself under that venv's Python.
+Update it with `~/.local/share/dlss-overlay-tray/venv/bin/pip install -U PySide6`.
 
 **GE-Proton 11 overwrites the registry at launch.** Unless `PROTON_DLSS_INDICATOR`
 is set, it exports `DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS=DLSSIndicator=0,...` and

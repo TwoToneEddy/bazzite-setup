@@ -53,9 +53,9 @@ do the job:
 **`rpm-ostree install` is a real commitment, not an install.** It layers the
 package onto a new deployment, which means a **reboot** before it exists, a slower
 rebase on every future update, and a thing that can block an update outright if it
-conflicts. Four packages are layered here and each earns it by needing kernel or
-system access a container cannot give: `coolercontrol`, `lact`, `liquidctl`,
-`gamescope-session-steam`. Do not add a fifth to save typing `flatpak`.
+conflicts. Three packages are layered here and each earns it by needing kernel or
+system access a container cannot give: `coolercontrol`, `lact`, `liquidctl`
+(`gamescope-session-steam` is deliberately not layered). Do not add a fourth to save typing `flatpak`.
 
 **Never layer a package without telling the user it means a reboot**, and never
 reboot on your own initiative. `04-prerequisites/install.sh` deliberately only
