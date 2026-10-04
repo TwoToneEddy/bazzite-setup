@@ -7,6 +7,13 @@ Bash aliases and a git-aware prompt, carried over from the previous machine.
 | File | |
 |---|---|
 | `~/.bashrc.d/50-bazzite-setup.sh` | the whole lot — prompt, then aliases by group |
+| `~/.config/fish/conf.d/50-bazzite-setup.fish` | the same aliases and `g`, for fish — CachyOS's login shell |
+
+**Fish (CachyOS).** Fish reads `~/.config/fish/conf.d/` by itself, so this file is
+also a drop-in. It has no prompt: fish's default one already shows the branch and
+whether the tree is dirty. `reload` re-reads `config.fish` there. Keep the two
+files in step when you change an alias; the comments explaining each trap live in
+the bash file.
 
 **Nothing is appended to `~/.bashrc`.** Fedora's stock `.bashrc` already sources
 every file in `~/.bashrc.d/`, so a single file dropped in there is the whole

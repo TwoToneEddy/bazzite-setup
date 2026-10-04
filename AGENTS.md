@@ -193,8 +193,8 @@ monitor as having no HDR support at all. That is exactly what Hunt did here.
 **The four things that must all be true**, in the order worth checking:
 
 1. **The output is in HDR mode in KWin.** Per-output, not global. Recorded state
-   here: `DP-4` (the AOC) and `HDMI-A-2` (the TV) have `highDynamicRange: true` and
-   `wideColorGamut: true`; `HDMI-A-3` (the Dell) is **false**. So a game moved to
+   here: `DP-1` (the AOC) and `HDMI-A-1` (the TV) have `highDynamicRange: true` and
+   `wideColorGamut: true`; `HDMI-A-2` (the Dell) is **false**. So a game moved to
    the Dell loses HDR and nothing announces it. HDR on the TV is
    configured but not yet confirmed on the real TV. System Settings → Display →
    per screen, or read `~/.config/kwinoutputconfig.json`.
@@ -206,7 +206,7 @@ monitor as having no HDR support at all. That is exactly what Hunt did here.
    most often missed, because the environment looks correct.
 4. **SDR brightness and gamut wideness are sane.** `sdrBrightness` and
    `sdrGamutWideness` in KWin decide how SDR content is mapped while the screen is
-   in HDR mode. Here: 450 nits / wideness 1 on `DP-4`. Set badly, *everything* looks
+   in HDR mode. Here: 450 nits / wideness 1 on `DP-1`. Set badly, *everything* looks
    washed out — including the desktop, which is a useful thing to check, because a
    washed-out desktop means the problem is not the game.
 

@@ -64,7 +64,7 @@ Name[th]=ร้านค้า
 Name[tr]=Mağaza
 Name[uk]=Крамниця
 Name[vi]=Cửa hàng
-Exec=/usr/bin/bazzite-steam steam://store
+Exec=/home/lee/.local/bin/steam-gaming steam://store
 
 [Desktop Action Community]
 Name=Community
@@ -94,7 +94,7 @@ Name[th]=ชุมชน
 Name[tr]=Topluluk
 Name[uk]=Спільнота
 Name[vi]=Cộng đồng
-Exec=/usr/bin/bazzite-steam steam://url/CommunityHome/
+Exec=/home/lee/.local/bin/steam-gaming steam://url/CommunityHome/
 
 [Desktop Action Library]
 Name=Library
@@ -124,7 +124,7 @@ Name[th]=คลัง
 Name[tr]=Kütüphane
 Name[uk]=Бібліотека
 Name[vi]=Thư viện
-Exec=/usr/bin/bazzite-steam steam://open/games
+Exec=/home/lee/.local/bin/steam-gaming steam://open/games
 
 [Desktop Action Servers]
 Name=Servers
@@ -154,7 +154,7 @@ Name[th]=เซิร์ฟเวอร์
 Name[tr]=Sunucular
 Name[uk]=Сервери
 Name[vi]=Máy chủ
-Exec=/usr/bin/bazzite-steam steam://open/servers
+Exec=/home/lee/.local/bin/steam-gaming steam://open/servers
 
 [Desktop Action Screenshots]
 Name=Screenshots
@@ -184,7 +184,7 @@ Name[th]=ภาพหน้าจอ
 Name[tr]=Ekran Görüntüleri
 Name[uk]=Скріншоти
 Name[vi]=Ảnh chụp
-Exec=/usr/bin/bazzite-steam steam://open/screenshots
+Exec=/home/lee/.local/bin/steam-gaming steam://open/screenshots
 
 [Desktop Action News]
 Name=News
@@ -214,7 +214,7 @@ Name[th]=ข่าวสาร
 Name[tr]=Haberler
 Name[uk]=Новини
 Name[vi]=Tin tức
-Exec=/usr/bin/bazzite-steam steam://openurl/https://store.steampowered.com/news
+Exec=/home/lee/.local/bin/steam-gaming steam://openurl/https://store.steampowered.com/news
 
 [Desktop Action Settings]
 Name=Settings
@@ -244,11 +244,11 @@ Name[th]=การตั้งค่า
 Name[tr]=Ayarlar
 Name[uk]=Налаштування
 Name[vi]=Thiết lập
-Exec=/usr/bin/bazzite-steam steam://open/settings
+Exec=/home/lee/.local/bin/steam-gaming steam://open/settings
 
 [Desktop Action BigPicture]
 Name=Big Picture
-Exec=/usr/bin/bazzite-steam steam://open/bigpicture
+Exec=/home/lee/.local/bin/steam-gaming steam://open/bigpicture
 
 [Desktop Action Friends]
 Name=Friends
@@ -278,4 +278,4 @@ Name[th]=เพื่อน
 Name[tr]=Arkadaşlar
 Name[uk]=Друзі
 Name[vi]=Bạn bè
-Exec=/usr/bin/bazzite-steam steam://open/friends
+Exec=/home/lee/.local/bin/steam-gaming steam://open/friends

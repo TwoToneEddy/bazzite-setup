@@ -174,7 +174,8 @@ check() {
             elif [ ! -x "$HOME/.local/bin/nvtruehdr" ]; then state=partial; detail="layer not built"
             else detail="layer built, repo on $(git -C "$HOME/nvtruehdr" branch --show-current 2>/dev/null)"; fi ;;
         12-shell-environment)
-            if ! grep -q 'bashrc.d' "$HOME/.bashrc" 2>/dev/null; then
+            if [ "$(basename "$(getent passwd "$USER" | cut -d: -f7)")" = bash ] \
+               && ! grep -q 'bashrc.d' "$HOME/.bashrc" 2>/dev/null; then
                 state=partial; detail="~/.bashrc does not source ~/.bashrc.d/"
             else
                 # Which GUI editor `g` resolves to on this machine, if any.

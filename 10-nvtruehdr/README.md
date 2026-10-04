@@ -87,8 +87,8 @@ grep -oE '"(connectorName|highDynamicRange|wideColorGamut|sdrBrightness)": [^,]*
 pid=$(pgrep -n -f '\.exe'); tr '\0' '\n' < /proc/$pid/environ | grep -iE 'HDR|WAYLAND'
 ```
 
-Recorded state here: HDR is on for `DP-4` (the AOC) and `HDMI-A-2` (the TV). The
-Dell (`HDMI-A-3`) has `highDynamicRange: false`, so a game moved to it loses HDR
+Recorded state here: HDR is on for `DP-1` (the AOC) and `HDMI-A-1` (the TV). The
+Dell (`HDMI-A-2`) has `highDynamicRange: false`, so a game moved to it loses HDR
 silently.
 
 **`ENABLE_HDR_WSI=1` is not the fix on this machine**, despite how often it is

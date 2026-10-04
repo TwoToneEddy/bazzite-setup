@@ -22,11 +22,17 @@ if [ "$DISTRO" = cachyos ]; then
     # *session* is deliberately left out, as on the Bazzite machine.
     say "packages (pacman)"
     missing=()
-    for pkg in coolercontrol lact liquidctl i2c-tools lm_sensors \
-               steam mangohud lib32-mangohud goverlay gamescope vkbasalt kate base-devel; do
+    # coolercontrold is the daemon 07 talks to; on Arch it is its own package, apart
+    # from the coolercontrol GUI. pyside6 is what the 03 and 08 tray icons import -
+    # the 08 tray uses the system Python and has no venv fallback.
+    for pkg in coolercontrol coolercontrold lact liquidctl i2c-tools lm_sensors \
+               steam mangohud lib32-mangohud goverlay gamescope pyside6 kate base-devel; do
         if pkg_installed "$pkg"; then ok "installed     $pkg"
         else missing+=("$pkg"); warn "missing       $pkg"; fi
     done
+    # vkbasalt is AUR-only here and nothing in this repo uses it, so it is optional.
+    if pkg_installed vkbasalt; then ok "installed     vkbasalt (optional)"
+    else skip "not installed vkbasalt (optional, AUR: paru -S vkbasalt)"; fi
     if [ "${#missing[@]}" -gt 0 ]; then
         echo
         echo "  Install them - no reboot needed. coolercontrol/lact are in the CachyOS"

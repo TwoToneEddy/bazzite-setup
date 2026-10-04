@@ -5,7 +5,7 @@
 # Steam passes its own environment down to every game it launches, so putting
 # the MangoHud and DLSS switches here is what makes them apply everywhere
 # without per-game launch options. The Steam launcher (steam.desktop in
-# ~/.local/share/applications) runs this instead of bazzite-steam directly.
+# ~/.local/share/applications) runs this instead of bazzite-steam (or steam) directly.
 #
 # Anything in the conf file wins over what is already in the environment;
 # that is deliberate, so `dlss` has the last word.
@@ -26,4 +26,6 @@ fi
 # launch. Set but empty, GE-Proton leaves it alone and nothing is written.
 export DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS=
 
-exec /usr/bin/bazzite-steam "$@"
+# Bazzite wraps Steam in bazzite-steam; everywhere else (CachyOS) it is plain steam.
+if [ -x /usr/bin/bazzite-steam ]; then exec /usr/bin/bazzite-steam "$@"; fi
+exec steam "$@"

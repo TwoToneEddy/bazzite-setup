@@ -115,7 +115,10 @@ if command -v kscreen-doctor >/dev/null; then
     for pair in "AOC_OUT:$AOC_OUT:$AOC_MODE" "DELL_OUT:$DELL_OUT:$DELL_MODE" "TV_OUT:$TV_OUT:$TV_MODE"; do
         var=${pair%%:*}; rest=${pair#*:}; out=${rest%%:*}; mode=${rest#*:}
         if grep -qx "$out" <<<"$live_outs"; then
-            if kd_plain | grep -q "$mode"; then
+            # Only this output's own block: matching the mode anywhere in the
+            # listing passed a connector that had been renamed onto another screen.
+            out_block=$(kd_plain | awk -v o="$out" '/^Output: /{on=($3==o)} on')
+            if grep -q "$mode" <<<"$out_block"; then
                 same "$var=$out, mode $mode available"
             else
                 diff_ "$var=$out is connected but has no $mode mode"

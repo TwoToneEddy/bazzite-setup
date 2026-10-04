@@ -23,7 +23,7 @@
                 "brightness": 1,
                 "colorPowerTradeoff": "PreferAccuracy",
                 "colorProfileSource": "sRGB",
-                "connectorName": "HDMI-A-2",
+                "connectorName": "HDMI-A-1",
                 "customModes": [
                 ],
                 "detectedDdcCi": false,
@@ -75,7 +75,7 @@
                 "brightness": 1,
                 "colorPowerTradeoff": "PreferAccuracy",
                 "colorProfileSource": "sRGB",
-                "connectorName": "DP-4",
+                "connectorName": "DP-1",
                 "customModes": [
                 ],
                 "detectedDdcCi": true,
@@ -127,7 +127,7 @@
                 "brightness": 1,
                 "colorPowerTradeoff": "PreferEfficiency",
                 "colorProfileSource": "sRGB",
-                "connectorName": "HDMI-A-3",
+                "connectorName": "HDMI-A-2",
                 "customModes": [
                 ],
                 "detectedDdcCi": true,

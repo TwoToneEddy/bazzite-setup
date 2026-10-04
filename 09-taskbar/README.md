@@ -20,10 +20,14 @@ Only one line matters.
 |---|---|
 | Steam | |
 | Lutris | |
-| Konsole, Bazaar, yafti, Files | |
-| Chrome | the flatpak |
+| Konsole, Files | |
+| Chrome | `google-chrome.desktop` (pacman) |
 | **Desk Gaming / Desk Work / TV Mode / Dell Only** | the four `display-profile` layouts (`01`) |
-| **Discord** | the flatpak, pinned by its flatpak export path |
+| **Discord** | `discord.desktop` (pacman) |
+
+That is the CachyOS row. On Bazzite, Chrome and Discord were flatpaks pinned by
+their `/var/lib/flatpak/exports/...` paths, and Bazaar and yafti sat after Konsole;
+neither exists on CachyOS.
 
 Big Picture (`bazzite-steam-bpm`, "Big Picture (in desktop)") is no longer pinned.
 There is no `steam-bigpicture.desktop` on this machine any more, so re-pinning it means recreating that launcher first.

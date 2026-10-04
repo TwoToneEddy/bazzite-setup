@@ -40,9 +40,9 @@ set -uo pipefail
 # Windows names these by hardware id; the equivalent here is the connector.
 # Each is paired with the resolution its EDID is known for, so a connector
 # rename is caught rather than silently applying the layout to the wrong panel.
-AOC_OUT="DP-4"          ; AOC_SIG="2560x1440"    # AOCA610  - AOC AG276QZD2
-DELL_OUT="HDMI-A-3"     ; DELL_SIG="1920x1200"   # DELF048  - Dell U2413
-TV_OUT="HDMI-A-2"       ; TV_SIG="3840x2160"     # PHL0B82  - Philips 48OLED707
+AOC_OUT="DP-1"          ; AOC_SIG="2560x1440"    # AOCA610  - AOC AG276QZD2
+DELL_OUT="HDMI-A-2"     ; DELL_SIG="1920x1200"   # DELF048  - Dell U2413
+TV_OUT="HDMI-A-1"       ; TV_SIG="3840x2160"     # PHL0B82  - Philips 48OLED707
 
 # MangoHud frame limit per screen, applied by whichever profile makes it primary.
 # The TV keeps a few frames of headroom under 120 Hz so VRR stays in charge;

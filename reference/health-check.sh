@@ -38,7 +38,7 @@ for m in nct6775 i2c_dev; do
 done
 for p in coolercontrol lact; do
     command -v "${p/coolercontrol/coolercontrold}" >/dev/null 2>&1 \
-        && pass "$p present" || fail "$p missing (rpm-ostree install $p)"
+        && pass "$p present" || fail "$p missing ($(command -v pacman >/dev/null && echo "sudo pacman -S" || echo "rpm-ostree install") $p)"
 done
 
 hdr "05 per-pin current"

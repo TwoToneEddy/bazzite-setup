@@ -41,11 +41,17 @@ its old cap until you press Shift_L+F4 in it.
 ## Hardware-specific
 
 **This is the component most tied to this machine.** Output names
-(`DP-4`, `HDMI-A-2`, …), resolutions and refresh rates are constants near the top
+(`DP-1`, `HDMI-A-1`, …), resolutions and refresh rates are constants near the top
 of `display-profile`. On different hardware, or after swapping a cable to another
 port, that is the block to edit. `kscreen-doctor -o` prints what is actually
 connected and what modes each output has — its output maps directly onto those
 constants.
+
+**The names differ between distributions on the same machine.** Bazzite called
+these outputs `DP-4` (AOC), `HDMI-A-2` (TV) and `HDMI-A-3` (Dell); CachyOS calls
+them `DP-1`, `HDMI-A-1` and `HDMI-A-2`. So `HDMI-A-2` is the TV on one and the
+Dell on the other. This branch records the CachyOS names, in `display-profile`
+and in both `kwinoutputconfig.json` files.
 
 It drives `kscreen-doctor`, i.e. KWin's own output management, so the result is
 what the Display Configuration panel would have done, and it persists.
@@ -53,8 +59,8 @@ what the Display Configuration panel would have done, and it persists.
 ## HDR is per screen, and lives here
 
 KWin turns HDR on per output, and `kwinoutputconfig.json` is where that is
-recorded: `highDynamicRange` and `wideColorGamut` are on for the AOC (`DP-4`) and
-the TV (`HDMI-A-2`), off for the Dell. A game on the Dell gets no HDR, and nothing
+recorded: `highDynamicRange` and `wideColorGamut` are on for the AOC (`DP-1`) and
+the TV (`HDMI-A-1`), off for the Dell. A game on the Dell gets no HDR, and nothing
 says so. The rest of what HDR needs is in `00-gaming-env` and in the HDR policy in
 [`../AGENTS.md`](../AGENTS.md#hdr-policy--washed-out-colours-are-the-default-failure-not-a-bug-you-found).
 
@@ -79,7 +85,7 @@ Delete that file to get "all monitors on at the login screen" back.
 ## Traps
 
 **`display-profile tv` has never been run for real**, and as things stand it
-cannot give you 4K120. Checked on 28 Sep 2026: the Philips 48OLED707 on `HDMI-A-2`
+cannot give you 4K120. Checked on 28 Sep 2026: the Philips 48OLED707 on `HDMI-A-1`
 advertises **no 3840x2160@120 mode at all**. Its best modes on that port are
 `3840x2160@60` and `2560x1440@120`, so the profile is set to 4K60 and the "TV Mode
 4K120" idea is blocked on the link, not on this script.
@@ -90,7 +96,7 @@ TV's own "Enhanced/UHD Deep Colour" setting for that input, which is off by defa
 on these panels and silently caps the port at HDMI 2.0. Change those, then re-check:
 
 ```bash
-kscreen-doctor -o | sed 's/\x1b\[[0-9;]*m//g' | grep -A3 HDMI-A-2   # 3840x2160@120?
+kscreen-doctor -o | sed 's/\x1b\[[0-9;]*m//g' | grep -A3 HDMI-A-1   # 3840x2160@120?
 display-profile tv
 display-profile gaming                                              # back
 ```

@@ -9,9 +9,19 @@ install_tree
 
 # Fedora's stock ~/.bashrc sources ~/.bashrc.d/* already. Confirm it, rather than
 # assuming - a .bashrc carried over from another distribution usually does not.
+# Which shell you actually log in to decides which copy matters. CachyOS uses
+# fish, which loads ~/.config/fish/conf.d/ on its own; Bazzite uses bash.
+login_shell=$(basename "$(getent passwd "$USER" | cut -d: -f7)")
+say "login shell: $login_shell"
+if [ "$login_shell" = fish ]; then
+    ok "fish loads ~/.config/fish/conf.d/50-bazzite-setup.fish by itself"
+fi
+
 say "is ~/.bashrc.d sourced?"
 if grep -q 'bashrc.d' "$HOME/.bashrc" 2>/dev/null; then
     ok "~/.bashrc already sources ~/.bashrc.d/*"
+elif [ "$login_shell" != bash ]; then
+    skip "~/.bashrc does not source ~/.bashrc.d/ - only matters if you run bash"
 else
     warn "~/.bashrc does NOT source ~/.bashrc.d/, so nothing here will load."
     warn "Add this to the end of ~/.bashrc:"
@@ -88,4 +98,4 @@ if [ "$missing" -gt 0 ]; then
 fi
 
 echo
-echo "  Open a new shell, or run:  source ~/.bashrc     (aliased to 'reload')"
+echo "  Open a new shell, or run 'reload' (re-reads ~/.bashrc in bash, config.fish in fish)"
