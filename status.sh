@@ -188,6 +188,10 @@ check() {
                     state=partial; detail="installed, but g has no GUI editor to open"
                 fi
             fi ;;
+        14-terminal-here)
+            if [ "$(kreadconfig6 --file "$HOME/.config/plasma-org.kde.plasma.desktop-appletsrc" --group ActionPlugins --group 0 --group "RightButton;NoModifier" --key _open_terminal 2>/dev/null)" = true ]; then
+                detail="on folder and empty-desktop right-click menus"
+            else state=partial; detail="folder menu only - desktop Open Terminal item is off"; fi ;;
     esac
     report "$dir" "$state" "$detail$unverified"
 }

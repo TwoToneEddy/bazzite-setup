@@ -361,7 +361,7 @@ That is the behaviour to expect, not a bug to chase.
 | `01-displays` | connector names and monitor modes |
 | `07-fan-control` | the board's sensor chip and channel names |
 | `02-mangohud-overlay` | the GPU's PCI address |
-| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `12` | nothing — these port as-is |
+| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `12`, `14` | nothing — these port as-is |
 
 ## Reporting back
 
