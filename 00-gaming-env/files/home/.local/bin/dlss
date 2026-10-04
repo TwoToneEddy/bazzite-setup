@@ -6,6 +6,7 @@
 #
 #   dlss status                 Show what is set right now.
 #   dlss overlay <on|off>       The DLSS / DLSS-G debug indicator overlay.
+#   dlss hook-system            Hook system-installed Proton (sudo), see below.
 #
 # How this works: NGX reads the indicator from the registry when a game starts
 # DLSS - HKLM\SOFTWARE\NVIDIA Corporation\Global\NGXCore, ShowDlssIndicator and
@@ -23,7 +24,10 @@
 # writes that over these values at every launch. So each GE-Proton install also
 # gets a user_settings.py that reads ~/.config/dlss-overlay at launch and sets
 # PROTON_DLSS_INDICATOR to match. A newly installed GE-Proton gets it at the
-# next `dlss overlay` (or `dlss status`).
+# next `dlss overlay` (or `dlss status`). Proton installed by a system package
+# (Proton-CachyOS, in /usr/share/steam/compatibilitytools.d) behaves the same but
+# is root-owned, so it is hooked once by `dlss hook-system`; the hook reads the
+# state file at launch, so toggling never needs root.
 #
 set -uo pipefail
 
@@ -84,16 +88,12 @@ PY
 
 # user_settings.py for every GE-Proton install. One we did not write is left alone.
 GE_MARK="# written by dlss (bazzite-setup)"
-ge_hook() {
-    local d f
-    for d in "$STEAM"/compatibilitytools.d/*/; do
-        [ -f "$d/proton" ] || continue
-        f="$d/user_settings.py"
-        if [ -e "$f" ] && ! grep -qF "$GE_MARK" "$f"; then
-            printf 'Not touching %s: it is not ours. Set PROTON_DLSS_INDICATOR in it by hand.\n' "$f" >&2
-            continue
-        fi
-        cat > "$f" <<PY
+# Proton builds installed by a system package (Proton-CachyOS lives here) do the
+# same as GE-Proton, but are root-owned: `dlss hook-system` hooks them, with sudo.
+SYSTEM_TOOLS=(/usr/share/steam/compatibilitytools.d /usr/local/share/steam/compatibilitytools.d)
+
+hook_body() {
+    cat <<PY
 $GE_MARK - read at every launch; keeps the DLSS indicator
 # in step with ~/.config/dlss-overlay. See: dlss help
 import os
@@ -103,7 +103,51 @@ except OSError:
     _on = False
 user_settings = {"PROTON_DLSS_INDICATOR": "1" if _on else "0"}
 PY
+}
+
+# System Proton installs whose user_settings.py is missing or out of date.
+unhooked_system() {
+    local t d f
+    for t in "${SYSTEM_TOOLS[@]}"; do for d in "$t"/*/; do
+        [ -f "$d/proton" ] || continue
+        f="$d/user_settings.py"
+        if [ -e "$f" ] && ! grep -qF "$GE_MARK" "$f"; then
+            printf 'Not touching %s: it is not ours. Set PROTON_DLSS_INDICATOR in it by hand.\n' "$f" >&2
+            continue
+        fi
+        [ -e "$f" ] && [ "$(cat "$f")" = "$(hook_body)" ] || printf '%s\n' "${d%/}"
+    done; done
+}
+
+ge_hook() {
+    local d f missing
+    for d in "$STEAM"/compatibilitytools.d/*/; do
+        [ -f "$d/proton" ] || continue
+        f="$d/user_settings.py"
+        if [ -e "$f" ] && ! grep -qF "$GE_MARK" "$f"; then
+            printf 'Not touching %s: it is not ours. Set PROTON_DLSS_INDICATOR in it by hand.\n' "$f" >&2
+            continue
+        fi
+        hook_body > "$f"
     done
+    missing=$(unhooked_system 2>/dev/null)
+    [ -z "$missing" ] ||
+        printf '!! System Proton not hooked, the overlay toggle has no effect there:\n%s\n   Fix: dlss hook-system  (uses sudo)\n' \
+            "$(printf '%s\n' "$missing" | sed 's/^/     /')" >&2
+}
+
+cmd_hook_system() {
+    local d todo
+    todo=$(unhooked_system)
+    [ -n "$todo" ] || { printf 'Every system Proton is already hooked.\n'; return 0; }
+    while read -r d; do
+        if hook_body | sudo tee "$d/user_settings.py" >/dev/null &&
+            sudo chmod 644 "$d/user_settings.py"; then
+            printf 'hooked  %s\n' "$d"
+        else
+            printf 'FAILED  %s\n' "$d" >&2; return 1
+        fi
+    done <<< "$todo"
 }
 
 apply_state() {  # apply_state on|off
@@ -149,8 +193,9 @@ cmd_overlay() {
 case "${1:-status}" in
     status)            cmd_status ;;
     overlay)           cmd_overlay "${2:-toggle}" ;;
+    hook-system)       cmd_hook_system ;;
     sr|rr|mfg|fg|launch-options|reset|dlls|dll|versions)
                        die "DLSS presets and DLLs are set with RHI now, not with dlss." ;;
-    -h|--help|help)    sed -n '3,26p' "$0" | sed 's/^# \{0,1\}//' ;;
+    -h|--help|help)    sed -n '3,31p' "$0" | sed 's/^# \{0,1\}//' ;;
     *) die "Unknown command '$1'. Try: dlss help" ;;
 esac

@@ -17,6 +17,11 @@ fi
 
 refresh_desktop_caches
 
+# Proton from a system package (Proton-CachyOS) needs the DLSS-indicator hook
+# written as root; per-user Proton is hooked by dlss itself on every toggle.
+say "DLSS indicator hook for system Proton"
+run "$HOME/.local/bin/dlss" hook-system || warn "dlss hook-system failed"
+
 if [ "${DRY_RUN:-0}" != 1 ]; then
     say "current settings"
     "$HOME/.local/bin/dlss" status 2>/dev/null | sed 's/^/        /' || warn "dlss status failed"

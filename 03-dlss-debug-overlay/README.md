@@ -84,3 +84,13 @@ dxvk-nvapi writes that over the prefix's values, so the toggle silently does
 nothing. `dlss` therefore drops a `user_settings.py` into every GE-Proton folder
 that reads `~/.config/dlss-overlay` at launch. A newly installed GE-Proton gets it
 at the next `dlss overlay` or `dlss status`, so toggle once after installing one.
+
+**Proton-CachyOS does the same, from a root-owned folder.** It is installed by
+the `proton-cachyos-slr` package into `/usr/share/steam/compatibilitytools.d/`,
+which `dlss` cannot write as you, so its hook is written once with sudo by
+`dlss hook-system` (the `00-gaming-env` installer runs it). The hook reads the
+state file at launch, so toggling never needs root. `dlss status` and every
+toggle warn when a system Proton is not hooked. Pacman leaves the file alone on
+upgrade because the package does not own it. This is how Hunt showed no
+indicator with the toggle on: Hunt runs Proton-CachyOS, and at each launch Proton
+wrote `DLSSIndicator=0` over the prefix's registry.
