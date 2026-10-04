@@ -90,7 +90,7 @@ check() {
     FILES_TOTAL=0; FILES_MISSING=0; FILES_UNKNOWN=0
     every_file_installed "$dir"
     if [ "$FILES_TOTAL" -gt 0 ] && [ "$FILES_MISSING" = "$FILES_TOTAL" ]; then
-        report "$dir" absent "none of its $FILES_TOTAL files are installed"
+        if [ -e "$dir/SKIP" ]; then report "$dir" absent "skipped by design (SKIP file)"; else report "$dir" absent "none of its $FILES_TOTAL files are installed"; fi
         return
     fi
     if [ "$FILES_MISSING" -gt 0 ]; then

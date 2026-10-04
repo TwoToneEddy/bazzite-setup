@@ -42,7 +42,7 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 | [`07-fan-control`](07-fan-control/) | the Windows FanControl curves, ported to CoolerControl | **yes** — channel names |
 | [`08-gpu-undervolt`](08-gpu-undervolt/) | LACT, the undervolt profile itself, and the overlay's VOLTAGE row | **yes** — silicon-specific |
 | [`09-taskbar`](09-taskbar/) | the panel launcher row, and the only safe way to edit it | no |
-| [`10-nvtruehdr`](10-nvtruehdr/) | SDR→HDR Vulkan layer (lives in its own git repo) | no |
+| [`10-nvtruehdr`](10-nvtruehdr/) | SDR→HDR Vulkan layer (lives in its own git repo) | no — **skipped by `install-all.sh`** (`SKIP` file); `./install-all.sh 10` installs it |
 | [`12-shell-environment`](12-shell-environment/) | bash aliases and a git-aware prompt, into `~/.bashrc.d/` | no |
 | [`13-vrr`](13-vrr/) | per-game VRR for windowed games, with an Onimusha example (manual guide; no installer) | display must support VRR |
 

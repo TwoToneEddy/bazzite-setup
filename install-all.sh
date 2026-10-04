@@ -38,6 +38,9 @@ export BAZZITE_SETUP_DEFER_CACHES=1
 
 for c in "${want[@]}"; do
     [ -x "$c/install.sh" ] || { echo "skipping $c (no installer)"; continue; }
+    # A component with a SKIP file is kept in the repo but not installed by a
+    # full run. Name it explicitly (./install-all.sh 10) to install it anyway.
+    if [ -e "$c/SKIP" ] && [ "$#" -eq 0 ]; then echo "skipping $c (SKIP: $(head -1 "$c/SKIP"))"; continue; fi
     printf '\n\033[1m=== %s ===\033[0m\n' "$c"
     ( cd "$c" && ./install.sh )
 done
