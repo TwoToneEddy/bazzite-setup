@@ -42,8 +42,13 @@ note "live:     $live_os"
 if command -v rpm-ostree >/dev/null; then
     same "rpm-ostree system - /etc is per-deployment, see README"
 else
-    diff_ "not an rpm-ostree system"
-    fix "the per-deployment /etc warnings in the READMEs do not apply; ignore them"
+    if command -v pacman >/dev/null; then
+        diff_ "pacman system (CachyOS/Arch) - not rpm-ostree"
+        fix "per-deployment /etc and uupd.timer warnings do not apply; packages via pacman/paru, see 04-prerequisites"
+    else
+        diff_ "neither rpm-ostree nor pacman"
+        fix "unsupported package manager: adapt pkg_installed in common/lib.sh and status.sh"
+    fi
 fi
 if command -v kscreen-doctor >/dev/null; then
     same "KDE Plasma present"

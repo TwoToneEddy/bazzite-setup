@@ -17,6 +17,9 @@
 #
 # "absent" for a component you chose to skip is a correct answer, not a failure.
 set -u
+# Same detection as common/lib.sh (not sourced here: lib.sh assumes a component dir).
+if command -v rpm-ostree >/dev/null; then pkg_installed() { rpm -q "$1" >/dev/null 2>&1; }
+else pkg_installed() { pacman -Q "$1" >/dev/null 2>&1; }; fi
 cd "$(dirname "$0")"
 
 PORCELAIN=0
@@ -129,7 +132,7 @@ check() {
                 grep -q "^$m " <<<"$(lsmod)" || miss="$miss $m"
             done
             for p in coolercontrol lact liquidctl; do
-                rpm -q "$p" >/dev/null 2>&1 || miss="$miss $p"
+                pkg_installed "$p" || miss="$miss $p"
             done
             if [ -n "$miss" ]; then state=partial; detail="not loaded/layered:$miss"
             else detail="modules loaded, 3 packages layered"; fi ;;

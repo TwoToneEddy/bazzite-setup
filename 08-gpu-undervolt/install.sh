@@ -4,7 +4,7 @@
 set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
 
-rpm -q lact >/dev/null 2>&1 || die "lact is not layered. See ../04-prerequisites."
+pkg_installed lact || die "lact is not installed. See ../04-prerequisites."
 
 # The failure this component exists to prevent: a deployment's own /etc carrying a
 # stub config. Say plainly what is about to be replaced.

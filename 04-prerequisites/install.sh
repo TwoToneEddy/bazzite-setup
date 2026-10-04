@@ -16,6 +16,27 @@ for m in nct6775 i2c-dev; do
     fi
 done
 
+if [ "$DISTRO" = cachyos ]; then
+    # CachyOS ships none of the gaming stack Bazzite bundles, so check that too.
+    # Plain gamescope is wanted (Bazzite has it in the image); the gamescope
+    # *session* is deliberately left out, as on the Bazzite machine.
+    say "packages (pacman)"
+    missing=()
+    for pkg in coolercontrol lact liquidctl i2c-tools lm_sensors \
+               steam mangohud lib32-mangohud goverlay gamescope vkbasalt kate base-devel; do
+        if pkg_installed "$pkg"; then ok "installed     $pkg"
+        else missing+=("$pkg"); warn "missing       $pkg"; fi
+    done
+    if [ "${#missing[@]}" -gt 0 ]; then
+        echo
+        echo "  Install them - no reboot needed. coolercontrol/lact are in the CachyOS"
+        echo "  repos; if pacman cannot find one, use the AUR (paru):"
+        echo "    sudo pacman -S --needed ${missing[*]}"
+        echo "    sudo systemctl enable --now coolercontrold lactd"
+    fi
+    exit 0
+fi
+
 say "layered packages"
 missing=()
 for pkg in coolercontrol lact liquidctl; do  # gamescope-session-steam deliberately not layered

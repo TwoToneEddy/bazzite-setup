@@ -53,7 +53,7 @@ if [ -n "$editor" ]; then
 else
     missing=$((missing+1))
     warn "g        -> no GUI editor found (kate, kwrite, gnome-text-editor, gedit)"
-    warn "             sudo rpm-ostree install kate, or flatpak a text editor"
+    warn "             $([ "$DISTRO" = cachyos ] && echo "sudo pacman -S kate" || echo "sudo rpm-ostree install kate, or flatpak a text editor")"
 fi
 
 if [ -e "$HOME/common/scripts/commit.sh" ]; then

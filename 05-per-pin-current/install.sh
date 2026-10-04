@@ -11,7 +11,7 @@ say "source, alarm script, unit and overlay rows"
 install_tree
 
 say "building astral-pins"
-have gcc || die "gcc not found. On Bazzite: use a toolbox, or layer gcc."
+have gcc || die "gcc not found. On Bazzite: use a toolbox, or layer gcc. On CachyOS: sudo pacman -S base-devel."
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
 if [ "${DRY_RUN:-0}" = 1 ]; then
     echo "  would  gcc -O2 -o astral-pins /usr/local/src/astral-pins/astral-pins.c"

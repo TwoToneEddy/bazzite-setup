@@ -193,3 +193,23 @@ Roll back or roll forward and it is gone, silently, while everything under
 `files/home` follows you. That is how a LACT undervolt profile disappeared once.
 After any `rpm-ostree rollback` or `upgrade`, re-run the installers that have a
 `files/system/etc` tree: `04`, `05` and `08`.
+
+## CachyOS (branch `cachyos`)
+
+This branch runs on both Bazzite and CachyOS; `common/lib.sh` sets `DISTRO` from
+whether `rpm-ostree` or `pacman` exists, and package checks go through
+`pkg_installed`. What changes on CachyOS:
+
+- **Packages:** `04-prerequisites` checks the whole gaming stack (Steam, MangoHud,
+  gamescope, vkbasalt, …) as well as coolercontrol/lact/liquidctl, and prints a
+  `sudo pacman -S --needed …` line. No reboot. Enable `coolercontrold` and `lactd`.
+- **The Bazzite policy doesn't apply:** `/usr` is writable, `/etc` is not
+  per-deployment, and there is no `uupd.timer`. Updates are `pacman -Syu`, so
+  re-check NVIDIA/LACT after a driver update.
+- **NVIDIA:** use CachyOS's `nvidia-open` driver. Re-run `./preflight.sh`,
+  because the GPU PCI address and LACT id can move.
+- **Proton:** `proton-cachyos` honours `PROTON_ENABLE_WAYLAND`/`PROTON_ENABLE_HDR`
+  like GE does, so the HDR conditions are unchanged. Stock Valve Proton still ignores them.
+- **Desktop:** install the KDE Plasma edition. Everything under `files/home` ports unchanged.
+
+Untested on real CachyOS hardware so far.

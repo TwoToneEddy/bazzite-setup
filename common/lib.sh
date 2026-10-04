@@ -35,6 +35,20 @@ run() {
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# DISTRO is "bazzite" (rpm-ostree, immutable /usr) or "cachyos" (Arch, pacman).
+# Anything else with pacman is treated as cachyos, anything with rpm as bazzite.
+if have rpm-ostree; then DISTRO=bazzite
+elif have pacman; then DISTRO=cachyos
+else DISTRO=unknown; fi
+
+# pkg_installed <name> - is the package installed (layered, in the image, or pacman)?
+pkg_installed() {
+    case $DISTRO in
+        cachyos) pacman -Q "$1" >/dev/null 2>&1 ;;
+        *)       rpm -q "$1" >/dev/null 2>&1 ;;
+    esac
+}
+
 # back_up <path> - keep one .bak-bazzite-setup copy of a file before replacing it.
 # Only the first run makes a backup; later runs leave the original backup alone,
 # so re-running an installer can never overwrite the copy of the pristine file.
