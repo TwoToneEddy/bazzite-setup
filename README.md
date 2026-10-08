@@ -211,6 +211,9 @@ whether `rpm-ostree` or `pacman` exists, and package checks go through
   because the GPU PCI address and LACT id can move.
 - **Proton:** `proton-cachyos` honours `PROTON_ENABLE_WAYLAND`/`PROTON_ENABLE_HDR`
   like GE does, so the HDR conditions are unchanged. Stock Valve Proton still ignores them.
+- **Split-lock mitigation:** CachyOS sets `kernel.split_lock_mitigate=0`
+  (`cachyos-gaming-meta`); Hunt depends on it. Check it on whichever distro you
+  move to — `health-check.sh` reports it. See `reference/HUNT_FREEZE_INVESTIGATION.md`.
 - **Desktop:** install the KDE Plasma edition. Everything under `files/home` ports unchanged.
 
 Untested on real CachyOS hardware so far.
