@@ -13,6 +13,7 @@ Windows install and nothing more. It starts hidden; `/` shows it, in every game.
 | `~/.config/MangoHud/MangoHud.conf` | the overlay itself, assembled from the pieces above |
 | `~/.local/bin/gpu-peaks` | publishes peak GPU temperature and power |
 | `~/.config/systemd/user/gpu-peaks.service` | runs the above |
+| `/etc/udev/rules.d/99-rapl-energy-readable.rules` | makes the RAPL counter MangoHud reads CPU power from world-readable. The kernel makes it root-only (CVE-2020-8694, a power side-channel), and then the CPU power row shows **0 W** with no error. In `/etc`, so per-deployment on Bazzite |
 
 `MANGOHUD=1` itself is set in `00-gaming-env`' `95-gaming.conf`, which is what
 puts the overlay on every Steam game. MangoHud ships with Bazzite.

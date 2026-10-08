@@ -1,0 +1,5 @@
+# Let MangoHud read CPU package power. On a Ryzen it reads the RAPL counter
+# /sys/class/powercap/intel-rapl:*/energy_uj, which the kernel makes root-only
+# (0400) since the PLATYPUS power side-channel, CVE-2020-8694. Unreadable, the
+# overlay's CPU power shows 0 W with no error. Installed by 02-mangohud-overlay.
+ACTION=="add", SUBSYSTEM=="powercap", KERNEL=="intel-rapl:*", RUN+="/usr/bin/chmod 0444 /sys%p/energy_uj"

@@ -25,6 +25,18 @@ if [ -n "${want:-}" ]; then
     fi
 fi
 
+say "CPU power (RAPL) readable"
+# The udev rule only fires on add, i.e. at boot; trigger it so it applies now.
+run sudo udevadm trigger --action=add --subsystem-match=powercap
+rapl=/sys/class/powercap/intel-rapl:0/energy_uj
+if [ ! -e "$rapl" ]; then
+    warn "$rapl does not exist - the CPU power row will read 0 W"
+elif [ "${DRY_RUN:-0}" = 1 ] || [ -r "$rapl" ]; then
+    ok "$rapl is readable"
+else
+    warn "$rapl is still root-only - the CPU power row will read 0 W"
+fi
+
 say "feed service"
 enable_user_units gpu-peaks.service
 if [ "${DRY_RUN:-0}" != 1 ]; then
