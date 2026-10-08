@@ -96,6 +96,12 @@ GOverlay is installed if you would rather edit this in a GUI.
 
 ## Traps
 
+**Hunt freeze investigation (2026-10-06):** the first test with `MANGOHUD=0`
+was freeze-free, and a separate Steam graphics-query crash involved a
+`mangohud-amdgpu` thread. Root cause is not confirmed; disabling MangoHud also
+removes its limiter. See [observations and the test plan](../reference/HUNT_FREEZE_INVESTIGATION.md).
+The per-pin current monitor and its audible alarm continue independently.
+
 **`custom_text` and `exec` rows only render with `legacy_layout=false`.** With the
 default `true`, MangoHud silently draws none of them and never runs the `exec`
 commands at all — the overlay looks fine, just missing five rows. This cost an

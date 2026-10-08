@@ -12,6 +12,14 @@ hdr "driver and kernel"
 nvidia-smi --query-gpu=driver_version,name --format=csv,noheader 2>/dev/null \
     && pass "nvidia-smi answers" || fail "nvidia-smi"
 info "kernel $(uname -r)"
+# Hunt split-locks thousands of times an hour; at the kernel default (1) each one
+# costs the thread ~10 ms. CachyOS ships 0 via cachyos-gaming-meta. See
+# reference/HUNT_FREEZE_INVESTIGATION.md.
+case "$(cat /proc/sys/kernel/split_lock_mitigate 2>/dev/null)" in
+    0)  pass "split_lock_mitigate=0" ;;
+    "") info "split_lock_mitigate not present (CPU/kernel has no split-lock detection)" ;;
+    *)  fail "split_lock_mitigate=$(cat /proc/sys/kernel/split_lock_mitigate) - Hunt threads get slowed on every split lock" ;;
+esac
 
 hdr "00 gaming environment"
 command -v dlss >/dev/null && dlss status 2>/dev/null | sed 's/^/        /' || fail "dlss command missing"
