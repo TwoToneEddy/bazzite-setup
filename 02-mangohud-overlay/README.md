@@ -7,12 +7,10 @@ Windows install and nothing more. It starts hidden; `/` shows it, in every game.
 
 | File | |
 |---|---|
-| `~/.config/MangoHud/bazzite-setup.d/10-overlay.conf` | keys, appearance, the GPU rows, max temp / max power |
+| `~/.config/MangoHud/bazzite-setup.d/10-overlay.conf` | keys, appearance, the GPU rows |
 | `~/.config/MangoHud/bazzite-setup.d/30-cpu-fps.conf` | the CPU, RAM and framerate rows |
 | `~/.config/MangoHud/bazzite-setup.d/90-limiter.conf` | the FPS limiter, logging, the blacklist |
 | `~/.config/MangoHud/MangoHud.conf` | the overlay itself, assembled from the pieces above |
-| `~/.local/bin/gpu-peaks` | publishes peak GPU temperature and power |
-| `~/.config/systemd/user/gpu-peaks.service` | runs the above |
 
 `MANGOHUD=1` itself is set in `00-gaming-env`' `95-gaming.conf`, which is what
 puts the overlay on every Steam game. MangoHud ships with Bazzite.
@@ -39,10 +37,10 @@ join back into exactly the file this used to be — checked with `cmp`.
 Thirteen items, taken from the `[Source *]` sections with `ShowInOSD=1` in the
 Windows `MSIAfterburner.cfg`: GPU temperature, usage, memory usage, core clock,
 power and voltage; CPU temperature and power; RAM usage; framerate, frametime,
-1 % low and 0.1 % low (voltage only once `08` is installed). Plus three rows Afterburner has no equivalent for: the six
-**12V-2x6 pin currents** (from `05`), **max temp / max power**, and **GPU memory clock**.
+1 % low and 0.1 % low (voltage only once `08` is installed). Plus two rows Afterburner has no equivalent for: the six
+**12V-2x6 pin currents** (from `05`) and **GPU memory clock**.
 
-Four things about the translation are worth knowing:
+Three things about the translation are worth knowing:
 
 * **CPU usage cannot be hidden.** Afterburner has it off. MangoHud draws usage,
   temperature and power as one row and drops the whole row if `cpu_stats` is off —
@@ -51,10 +49,6 @@ Four things about the translation are worth knowing:
   reads NVIDIA cards through — has no voltage API. The row and its feed live in
   `08-gpu-undervolt`, which runs the LACT daemon they read; its README has the
   detail.
-* **Max temp / max power** exist because MangoHud has no peak tracking of its own —
-  there is no `gpu_temp_max` parameter — and Afterburner does. `gpu-peaks` reads
-  NVML directly rather than shelling out to `nvidia-smi`, which costs 50–100 ms a
-  call.
 * **GPU memory clock** needs `vram` enabled or MangoHud drops it silently, and it
   shares the VRAM row rather than getting a labelled row of its own. It agrees
   with LACT — 405 MHz idle, 810 MHz under light load, checked side by side.

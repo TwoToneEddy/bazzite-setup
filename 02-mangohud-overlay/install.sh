@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Install the base overlay and the peaks feed, then assemble MangoHud.conf.
+# Install the base overlay, then assemble MangoHud.conf.
 #
 # The 12V-2x6 and VOLTAGE rows are not here: 05-per-pin-current and
 # 08-gpu-undervolt add them, because they own what feeds them.
 set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
 
-say "overlay pieces and the peaks feed"
+say "overlay pieces"
 install_tree
 assemble_mangohud
 
@@ -25,14 +25,16 @@ if [ -n "${want:-}" ]; then
     fi
 fi
 
-say "feed service"
-enable_user_units gpu-peaks.service
-if [ "${DRY_RUN:-0}" != 1 ]; then
-    sleep 2
-    for f in /dev/shm/gpu-peaks.temp /dev/shm/gpu-peaks.power; do
-        if [ -r "$f" ]; then ok "$(basename "$f") = $(cat "$f")"
-        else warn "$f not written - systemctl --user status gpu-peaks"; fi
-    done
+# gpu-peaks.service fed MAX TEMP / MAX POWER rows that were dropped to match the
+# Windows overlay, and was then removed. Retire it where an older install left it.
+old_unit="$HOME/.config/systemd/user/gpu-peaks.service"
+if [ -e "$old_unit" ] || [ -e "$HOME/.local/bin/gpu-peaks" ]; then
+    say "retiring gpu-peaks"
+    run systemctl --user disable --now gpu-peaks.service 2>/dev/null || true
+    run rm -f "$old_unit" "$HOME/.local/bin/gpu-peaks" \
+        /dev/shm/gpu-peaks.temp /dev/shm/gpu-peaks.power /dev/shm/gpu-peaks.reset
+    run systemctl --user daemon-reload
+    [ "${DRY_RUN:-0}" = 1 ] || ok "removed gpu-peaks service, script and /dev/shm feeds"
 fi
 
 echo

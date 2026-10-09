@@ -118,8 +118,7 @@ check() {
             else state=partial; detail="no kscreen-doctor - KDE only"; fi ;;
         02-mangohud-overlay)
             if [ ! -r "$MANGO_CONF" ]; then state=partial; detail="MangoHud.conf not assembled - run its install.sh"
-            elif ! user_active gpu-peaks; then state=partial; detail="user service not active: gpu-peaks"
-            else detail="rows from: $(cd "$MANGO_PARTS" 2>/dev/null && echo *.conf), peak $(cat /dev/shm/gpu-peaks.temp 2>/dev/null)"; fi ;;
+            else detail="rows from: $(cd "$MANGO_PARTS" 2>/dev/null && echo *.conf)"; fi ;;
         03-dlss-debug-overlay)
             if pgrep -f dlss-overlay-tray >/dev/null; then detail="tray running (pid $(pgrep -f dlss-overlay-tray | head -1))"
             else state=partial; detail="tray not running - start dlss-overlay-tray"; fi ;;

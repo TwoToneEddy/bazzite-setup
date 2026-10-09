@@ -31,10 +31,6 @@ command -v display-profile >/dev/null && display-profile status 2>/dev/null | se
 hdr "02 overlay"
 [ -r "$HOME/.config/MangoHud/MangoHud.conf" ] && pass "MangoHud.conf present" || fail "MangoHud.conf missing"
 info "rows from: $(cd "$HOME/.config/MangoHud/bazzite-setup.d" 2>/dev/null && echo *.conf)"
-systemctl --user is-active --quiet gpu-peaks && pass "gpu-peaks active" || fail "gpu-peaks not active"
-for f in /dev/shm/gpu-peaks.temp /dev/shm/gpu-peaks.power; do
-    [ -r "$f" ] && pass "$(basename "$f") = $(cat "$f")" || fail "$f missing"
-done
 
 hdr "03 DLSS overlay tray"
 pgrep -f dlss-overlay-tray >/dev/null && pass "tray running (pid $(pgrep -f dlss-overlay-tray | head -1))" \

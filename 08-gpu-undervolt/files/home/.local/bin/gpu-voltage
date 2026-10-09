@@ -7,7 +7,7 @@ turns up no voltage symbol, and `nvidia-smi -q -d VOLTAGE` prints an empty
 section. The row would sit at a permanent 0 mV.
 
 LACT gets it by a different route (NvAPI), so this asks lactd once a second and
-republishes the answer as plain text, exactly like gpu-peaks and astral-pins.
+republishes the answer as plain text, exactly like astral-pins.
 
 The GPU id is NOT optional. `lact cli stats` with no -g silently selects GPU 0,
 which is the Radeon iGPU in the 9800X3D, and happily prints its voltage - about
