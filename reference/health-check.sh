@@ -77,6 +77,15 @@ fi
 n=$(journalctl -k --no-pager 2>/dev/null | grep -c 'NVRM: Xid' || true)
 [ "${n:-0}" = 0 ] && pass "no NVRM Xid errors this boot" || fail "$n NVRM Xid errors"
 
+hdr "11 power mode"
+pp=$(busctl get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles \
+    org.freedesktop.UPower.PowerProfiles ActiveProfile 2>/dev/null | awk -F'"' '{print $2}')
+[ "$pp" = performance ] && pass "power mode performance ($(tuned-adm active 2>/dev/null | sed 's/.*: //'))" \
+    || fail "power mode is ${pp:-unknown}, not performance - ./install-all.sh 11"
+grep -q '^default=performance$' /etc/tuned/ppd.conf 2>/dev/null && pass "ppd.conf default=performance" \
+    || fail "/etc/tuned/ppd.conf default is not performance - this deployment's /etc may have reset"
+info "governor $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null), EPP $(cat /sys/devices/system/cpu/cpu0/cpufreq/energy_performance_preference 2>/dev/null)"
+
 hdr "system"
 info "$(systemd-analyze 2>/dev/null | tail -1)"
 n=$(systemctl --failed --no-legend | wc -l)

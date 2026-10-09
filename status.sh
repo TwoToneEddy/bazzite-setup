@@ -169,6 +169,13 @@ check() {
             if [ ! -d "$HOME/nvtruehdr/.git" ]; then state=partial; detail="repo not cloned"
             elif [ ! -x "$HOME/.local/bin/nvtruehdr" ]; then state=partial; detail="layer not built"
             else detail="layer built, repo on $(git -C "$HOME/nvtruehdr" branch --show-current 2>/dev/null)"; fi ;;
+        11-power-profile)
+            local pp; pp=$(busctl get-property org.freedesktop.UPower.PowerProfiles /org/freedesktop/UPower/PowerProfiles \
+                org.freedesktop.UPower.PowerProfiles ActiveProfile 2>/dev/null | awk -F'"' '{print $2}')
+            if ! grep -q '^default=performance$' /etc/tuned/ppd.conf 2>/dev/null; then
+                state=absent; detail="power mode ${pp:-unknown}, ppd.conf default not performance"
+            elif [ "$pp" != performance ]; then state=partial; detail="ppd.conf set, but power mode is ${pp:-unknown}"
+            else detail="performance ($(tuned-adm active 2>/dev/null | sed 's/.*: //'))"; fi ;;
         12-shell-environment)
             if ! grep -q 'bashrc.d' "$HOME/.bashrc" 2>/dev/null; then
                 state=partial; detail="~/.bashrc does not source ~/.bashrc.d/"

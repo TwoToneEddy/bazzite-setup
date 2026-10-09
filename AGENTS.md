@@ -83,7 +83,7 @@ rpm-ostree status         # what is layered, and on which deployment
 That `/etc` behaviour is not theoretical: it is how a LACT undervolt profile
 disappeared after a reboot here, leaving a 164-byte stub with
 `current_profile: null` and no error anywhere. After any `rpm-ostree rollback` or
-`upgrade`, re-run the installers that write to `/etc` — `04`, `05` and `08`.
+`upgrade`, re-run the installers that write to `/etc` — `04`, `05`, `08` and `11`.
 
 **`uupd.timer` updates the system automatically** at 04:00, with
 `Persistent=true`, so it catches up on missed runs. If you are testing anything
@@ -364,7 +364,7 @@ That is the behaviour to expect, not a bug to chase.
 | `01-displays` | connector names and monitor modes |
 | `07-fan-control` | the board's sensor chip and channel names |
 | `02-mangohud-overlay` | the GPU's PCI address |
-| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `12` | nothing — these port as-is |
+| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `11`, `12` | nothing — these port as-is |
 
 ## Reporting back
 
