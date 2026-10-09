@@ -22,6 +22,8 @@ refresh_desktop_caches
 say "DLSS indicator hook for system Proton"
 run "$HOME/.local/bin/dlss" hook-system || warn "dlss hook-system failed"
 
+"$(dirname "$0")/install-ge-proton.sh"
+
 if [ "${DRY_RUN:-0}" != 1 ]; then
     say "current settings"
     "$HOME/.local/bin/dlss" status 2>/dev/null | sed 's/^/        /' || warn "dlss status failed"

@@ -18,6 +18,7 @@ override silently falls back to E.
 | File | |
 |---|---|
 | `~/.local/bin/dlss` | status, and the DLSS debug indicator |
+| `~/.local/share/Steam/compatibilitytools.d/GE-Proton*` | the newest GE-Proton, via `install-ge-proton.sh`; skipped if already there, older versions kept |
 | `~/.config/environment.d/95-gaming.conf` | what it writes; the whole gaming environment |
 | `~/.local/bin/steam-gaming` | Steam wrapper that applies the above |
 | `~/.config/autostart/steam.desktop` | autostarts Steam through the wrapper |
