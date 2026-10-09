@@ -115,8 +115,9 @@ ls -l /dev/ttyACM0                  # confirm which group owns it
 ```
 
 **Every remaining alias target was checked on this machine**, and `install.sh`
-re-checks them wherever you install it. `gitk` resolves to a distrobox shim in
-`~/.local/bin`, which is why `gk` works on an immutable system at all.
+re-checks them wherever you install it. `gitk` is not in the Bazzite image;
+`install.sh` installs it with `brew install git-gui` (user-space, no reboot), which
+is why `gk` works on an immutable system at all.
 
 **On an immutable system, reach for `flatpak` or a toolbox before `rpm-ostree`**
 when filling any of these gaps. See the Bazzite policy in `../AGENTS.md`.

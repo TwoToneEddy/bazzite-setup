@@ -23,6 +23,17 @@ else
 SNIP
 fi
 
+# gk needs gitk, which Bazzite does not ship. Homebrew's git-gui formula provides it
+# without touching the OS image (no layering, no reboot).
+say "gitk"
+if command -v gitk >/dev/null 2>&1; then
+    skip "present       $(command -v gitk)"
+elif command -v brew >/dev/null 2>&1; then
+    run brew install git-gui && { [ "${DRY_RUN:-0}" = 1 ] || ok "installed     gitk (brew git-gui)"; }
+else
+    warn "no brew - gitk not installed; gk will not work"
+fi
+
 # An alias pointing at a command that is not installed is not an error - it is a
 # thing that will fail the first time you use it and leave you wondering why. Say
 # which ones now.
