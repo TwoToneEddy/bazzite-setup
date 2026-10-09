@@ -21,18 +21,24 @@ if ! release=$(curl -fsSL "$API"); then
     warn "could not reach GitHub - GE-Proton not checked"
     exit 0
 fi
-tag=$(printf '%s' "$release" | grep -m1 '"tag_name"' | cut -d'"' -f4)
-tar_url=$(printf '%s' "$release" | grep -o '"browser_download_url": *"[^"]*\.tar\.gz"' | cut -d'"' -f4 | head -1)
-sum_url=$(printf '%s' "$release" | grep -o '"browser_download_url": *"[^"]*\.sha512sum"' | cut -d'"' -f4 | head -1)
-[ -n "$tag" ] && [ -n "$tar_url" ] || { warn "unexpected GitHub response - GE-Proton not checked"; exit 0; }
+tag=$(printf '%s' "$release" | grep -o '"tag_name": *"[^"]*"' | head -1 | cut -d'"' -f4)
+# GE-Proton 11+ ships one build per architecture (<tag>-x86_64, <tag>-aarch64);
+# older releases ship a single <tag>.tar.gz. Taking the first .tar.gz listed got
+# the aarch64 build, which will not run here.
+arch=$(uname -m)
+urls=$(printf '%s' "$release" | grep -o '"browser_download_url": *"[^"]*"' | cut -d'"' -f4)
+name=$tag-$arch
+case $'\n'$urls$'\n' in *"/$name.tar.gz"$'\n'*) ;; *) name=$tag ;; esac
+tar_url=$(printf '%s\n' "$urls" | grep -m1 "/$name\.tar\.gz$" || true)
+sum_url=$(printf '%s\n' "$urls" | grep -m1 "/$name\.sha512sum$" || true)
+[ -n "$tag" ] || { warn "unexpected GitHub response - GE-Proton not checked"; exit 0; }
+[ -n "$tar_url" ] || { warn "$tag has no $arch build - GE-Proton not installed"; exit 0; }
 
-# The tarball unpacks to <tag> (older releases) or <tag>-x86_64 (GE-Proton 11+).
-for d in "$DEST/$tag" "$DEST/$tag-x86_64"; do
-    if [ -d "$d" ]; then skip "unchanged     $(basename "$d") (newest)"; exit 0; fi
-done
+# The tarball unpacks to the asset's name: <tag> or <tag>-<arch>.
+if [ -d "$DEST/$name" ]; then skip "unchanged     $name (newest)"; exit 0; fi
 
 if [ "${DRY_RUN:-0}" = 1 ]; then
-    printf '  would  download %s into %s\n' "$tag" "$DEST"
+    printf '  would  download %s into %s\n' "$name" "$DEST"
     exit 0
 fi
 
@@ -49,6 +55,6 @@ fi
 
 mkdir -p "$DEST"
 tar -xzf "$tarball" -C "$DEST" || die "unpacking $tag failed"
-ok "installed     $tag"
+ok "installed     $name"
 echo "  Restart Steam to see it, then pick it under Properties → Compatibility,"
 echo "  or as the default in Settings → Compatibility."
