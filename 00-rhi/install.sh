@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Clone RHI (ReShade HDR Installer) to ~/RHI, build it, and add its menu entry.
+# Clone RHI (ReShade HDR Installer) to ~/RHI, build it, and add its menu entry
+# and desktop launcher.
 # RHI owns DLSS presets and DLL versions, and the RenoDX / Luma HDR mods.
 set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
@@ -52,5 +53,10 @@ else
     "$DIR/scripts/install-linux-desktop.sh" --no-desktop | sed 's/^/        /'
     ok "installed     $MENU"
 fi
+
+# On the desktop too, like 01's display-profile launchers. RHI's own script only
+# offers this as an interactive prompt, which the build step above suppresses.
+say "launcher on the desktop"
+add_to_desktop rhi-linux.desktop
 
 refresh_desktop_caches

@@ -1,14 +1,15 @@
 # 00-rhi — RHI, the ReShade HDR Installer
 
 Clones [RHI](https://github.com/TwoToneEddy/RHI) (`linux_port` branch) to `~/RHI`,
-builds it, and adds an application-menu entry (**RHI (Linux / Proton)**).
+builds it, and adds an application-menu entry (**RHI (Linux / Proton)**) and the
+same launcher on the desktop.
 
 RHI is what installs RenoDX, Luma and ReShade per game, and it owns DLSS presets and
 DLL versions — `00-gaming-env`'s `dlss` no longer does. It sits at `00`
 because it depends on nothing else here.
 
 ```bash
-./install.sh             # clone, build, menu entry; idempotent
+./install.sh             # clone, build, menu entry, desktop icon; idempotent
 DRY_RUN=1 ./install.sh
 ```
 
