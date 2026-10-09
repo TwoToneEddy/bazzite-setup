@@ -6,7 +6,8 @@
 #   DRY_RUN=1 ./install-all.sh    print what would happen, change nothing
 #
 # Stops at the first component that fails, rather than carrying on and leaving a
-# half-installed system that looks finished.
+# half-installed system that looks finished. Also stops, cleanly, when a component
+# has layered packages (04) and a reboot is needed before the rest can work.
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -42,7 +43,14 @@ for c in "${want[@]}"; do
     # full run. Name it explicitly (./install-all.sh 10) to install it anyway.
     if [ -e "$c/SKIP" ] && [ "$#" -eq 0 ]; then echo "skipping $c (SKIP: $(head -1 "$c/SKIP"))"; continue; fi
     printf '\n\033[1m=== %s ===\033[0m\n' "$c"
-    ( cd "$c" && ./install.sh )
+    rc=0
+    ( cd "$c" && ./install.sh ) || rc=$?
+    case $rc in
+        0) ;;
+        100) printf '\n\033[1mreboot pending\033[0m — stopped after %s. Reboot, then run ./install-all.sh again.\n' "$c"
+             exit 0 ;;
+        *) exit "$rc" ;;
+    esac
 done
 
 printf '\n\033[1m=== desktop and icon caches ===\033[0m\n'

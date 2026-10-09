@@ -13,9 +13,10 @@ means a reboot.
 
 ## Layered packages
 
-These are not files, so the installer only checks for them and tells you the
-command; layering triggers a reboot and that is not something an installer should
-do behind your back.
+The installer adds the two COPR repos and layers whatever is missing, then asks
+`Reboot now? [y/N]` — no is the default, and it never reboots without an explicit
+yes. Either way `install-all.sh` stops after `04` with `reboot pending`; reboot and
+run it again to carry on from `05`. The manual equivalent, if you want it:
 
 `coolercontrol` and `lact` are **not in Fedora's repos** — they come from COPR,
 and without these two repo files `rpm-ostree` fails with

@@ -58,8 +58,10 @@ system access a container cannot give: `coolercontrol`, `lact`, `liquidctl`
 (`gamescope-session-steam` is deliberately not layered). Do not add a fourth to save typing `flatpak`.
 
 **Never layer a package without telling the user it means a reboot**, and never
-reboot on your own initiative. `04-prerequisites/install.sh` deliberately only
-prints the command for this reason.
+reboot on your own initiative. `04-prerequisites/install.sh` adds the COPRs and
+layers the packages, then asks `Reboot now? [y/N]` (default no) and stops
+`install-all.sh` cleanly; it never reboots unless someone types yes at the
+terminal. An agent driving it must not answer that prompt for the user.
 
 **Bazzite already ships most of what a gaming setup wants** — MangoHud, GOverlay,
 gamescope, Steam, Proton, `vkbasalt`, `mesa-vulkan`. Check before installing:
@@ -146,8 +148,9 @@ HDR, display switching, the overlay with its FPS limiter, the DLSS indicator
 toggle — and need no layered package; `./stage1.sh` installs just those.
 Everything from `04` on is stage 2.
 
-`04-prerequisites` will tell you to layer packages and reboot. That is a real
-interruption: layer them, reboot, then run `./install-all.sh` again.
+`04-prerequisites` layers packages, and `install-all.sh` then stops with
+`reboot pending`. That is a real interruption: reboot, then run
+`./install-all.sh` again.
 
 ### 4. Verify
 
