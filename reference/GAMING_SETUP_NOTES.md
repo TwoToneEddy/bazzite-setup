@@ -879,12 +879,17 @@ section per game). Source, README and build: `~/nvtruehdr/`.
 Nothing here is set up for you, because there is nothing installed to set it up
 for. This is the route when you want one.
 
-**The important part:** the gaming environment in
-`~/.config/environment.d/95-gaming.conf` — MangoHud, the DLSS overrides, HDR,
-Wayland — is applied to **your whole session**, not just Steam. Anything you
-launch inherits it, including Lutris, Heroic and a bare `wine` command. That was
-a deliberate choice after Steam's autostart entry turned out to bypass the
-launcher wrapper.
+**The important part:** the gaming environment, `~/.config/gaming-env.conf` —
+MangoHud, the DLSS DLL upgrade, HDR, Wayland — reaches **Steam and its games
+only**, through `steam-gaming`. Lutris, Heroic or a bare `wine` command get none of
+it. Give such a game the same variables in its own settings (Lutris: game →
+Configure → System options → Environment variables).
+
+*History (2026-10-10):* it used to live in `~/.config/environment.d/95-gaming.conf`
+and so applied to the whole session, chosen after Steam's autostart entry was
+found to bypass the wrapper. The autostart entry has used the wrapper since, and
+the session-wide copy put MangoHud inside `kwin_wayland` and every other app, so
+it moved out. See `00-gaming-env/README.md`.
 
 **Adding a non-Steam game to Steam** (simplest, keeps Proton, MangoHud, the
 overlay and controller support):
@@ -988,14 +993,14 @@ Yours to tune in LACT, as agreed.
 
 - **Pause was bound to "Lock Session."** To give Pause to the displays, Lock
   Session went back to its default **Meta+L**. It had no other binding.
-- **The gaming environment lives in `~/.config/environment.d/95-gaming.conf`**
-  (MangoHud, `PROTON_DLSS_UPGRADE=1`, and whatever `dlss` has set).
-  `~/.config/gaming-env.conf` is a symlink to it. systemd exports it to the
-  whole session, which matters because **KDE autostarts Steam at login** via
-  `~/.config/autostart/steam.desktop` — that path goes through no launcher we
-  control, so a desktop-file override alone silently missed it. Both the
-  autostart entry and the app-menu entry now also call
-  `~/.local/bin/steam-gaming`, which re-applies the file, as a second layer.
+- **The gaming environment lives in `~/.config/gaming-env.conf`**
+  (MangoHud, `PROTON_DLSS_UPGRADE=1`, the HDR switches). It was in
+  `~/.config/environment.d/95-gaming.conf`, exported session-wide, because
+  **KDE autostarts Steam at login** via `~/.config/autostart/steam.desktop` and
+  that once bypassed the wrapper. Both the autostart entry and the app-menu
+  entry (and their actions) now call `~/.local/bin/steam-gaming`, which applies
+  the file, so since 2026-10-10 that is the only route — see
+  `00-gaming-env/README.md`.
 - **MangoHud's frame limiter is 280 fps.** That is the port of the RTSS limiter
   your Windows display profiles switched on; each profile rewrites it to match
   the screen it just selected. `display-profile gaming --no-limiter` skips it,
@@ -1053,9 +1058,9 @@ The alarm tone and how many times it plays are at the top of
 | FPS cap | `fps_limit=` in `MangoHud.conf` | **Shift+F1 cycles** the list in-game. 276 is first, to leave G-Sync headroom under 280 Hz. |
 | Overlay hotkey | `toggle_hud=slash` | |
 | Frametime logging | `autostart_log=` in `MangoHud.conf` | `0` = off. **Shift+F2 logs on demand** to `~/mangohud-logs`. |
-| DLSS preset / version / overlay | `dlss` command, or the tray icon | `dlss sr M`, `dlss overlay on`, `dlss status`. Writes `~/.config/environment.d/95-gaming.conf`. **Restart Steam after any change.** |
-| DLSS DLL version | `PROTON_DLSS_UPGRADE=` in `95-gaming.conf` | `1` = newest, or pin e.g. `310.9.1.0`. Needs Proton GE/EM. |
-| HDR on/off | `PROTON_ENABLE_HDR` / `PROTON_ENABLE_WAYLAND` in `95-gaming.conf` | Both needed. Turning Wayland off should also cure the Hunt focus jump, at the cost of HDR. Full checklist for HDR that is not working, and why most of the advice online does not apply here: `~/bazzite-setup/AGENTS.md`, "HDR policy". |
+| DLSS preset / version / overlay | `dlss` command, or the tray icon | `dlss sr M`, `dlss overlay on`, `dlss status`. Writes `~/.config/gaming-env.conf`. **Restart Steam after any change.** |
+| DLSS DLL version | `PROTON_DLSS_UPGRADE=` in `gaming-env.conf` | `1` = newest, or pin e.g. `310.9.1.0`. Needs Proton GE/EM. |
+| HDR on/off | `PROTON_ENABLE_HDR` / `PROTON_ENABLE_WAYLAND` in `gaming-env.conf` | Both needed. Turning Wayland off should also cure the Hunt focus jump, at the cost of HDR. Full checklist for HDR that is not working, and why most of the advice online does not apply here: `~/bazzite-setup/AGENTS.md`, "HDR policy". |
 | HDR per screen | `~/.config/kwinoutputconfig.json`, or System Settings → Display | Per output, not global. Currently **on for `DP-4` and `HDMI-A-2` (the TV)** — the Dell has `highDynamicRange: false`, so a game moved to it loses HDR with nothing said. |
 | Display layouts | `~/.local/bin/display-profile` | `display-profile gaming\|work\|tv\|dell\|status`. Refresh rates and outputs are near the top of the file. |
 | Login screen layout | `/var/lib/plasmalogin/.config/kwinoutputconfig.json` | Copy of your session's `setups` block. Delete it to get "all monitors on" back. |
@@ -1125,7 +1130,7 @@ Worth tracking, roughly in order of how annoying they would be to recreate:
 | `~/.local/bin/` — `dlss`, `display-profile`, `displays-sleep`, `steam-gaming`, `dlss-overlay-tray`, `dlss-overlay-toggle`, `window-info` | all hand-written |
 | `~/.local/share/gaming-setup/apply-fan-curves.py` | the ported FanControl curves |
 | `~/.config/MangoHud/MangoHud.conf` | the Afterburner match |
-| `~/.config/environment.d/95-gaming.conf` | the whole gaming environment |
+| `~/.config/gaming-env.conf` | the whole gaming environment |
 | `~/.config/kwinrulesrc` | the Hunt focus rule |
 | `~/.config/kwinoutputconfig.json` | display layout |
 | `~/.local/share/applications/*.desktop`, `~/Desktop/*.desktop` | launchers |
@@ -1181,8 +1186,7 @@ the kind of thing that goes wrong quietly.
 ~/.local/share/vulkan/implicit_layer.d/nvtruehdr_{64,32}.json   its manifests
 ~/.config/nvtruehdr/nvtruehdr.conf        nvtruehdr settings (read live)
 ~/.config/vulkan/implicit_layer.d/MangoHud.*.json               symlinks: MangoHud loads above nvtruehdr
-~/.config/environment.d/95-gaming.conf    MangoHud + DLSS env, exported session-wide
-~/.config/gaming-env.conf                 symlink to the above
+~/.config/gaming-env.conf                 MangoHud + DLSS + HDR env, read by steam-gaming only
 ~/.config/autostart/steam.desktop         autostarted Steam, via the wrapper
 ~/.config/autostart/dlss-overlay-tray.desktop   starts the tray icon at login
 ~/.config/MangoHud/MangoHud.conf          overlay, matched to Windows Afterburner

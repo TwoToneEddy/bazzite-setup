@@ -3,8 +3,8 @@
 set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
 
-[ -r "$HOME/.config/environment.d/95-gaming.conf" ] \
-    || warn "95-gaming.conf is missing - install ../00-gaming-env first."
+[ -r "$HOME/.config/gaming-env.conf" ] \
+    || warn "gaming-env.conf is missing - install ../00-gaming-env first."
 
 say "tray, toggle, desktop entry and icons"
 install_tree

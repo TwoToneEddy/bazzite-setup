@@ -83,7 +83,7 @@ rpm-ostree status         # what is layered, and on which deployment
 That `/etc` behaviour is not theoretical: it is how a LACT undervolt profile
 disappeared after a reboot here, leaving a 164-byte stub with
 `current_profile: null` and no error anywhere. After any `rpm-ostree rollback` or
-`upgrade`, re-run the installers that write to `/etc` — `04`, `05`, `08`, `11`, `14` and `15`.
+`upgrade`, re-run the installers that write to `/etc` — `04`, `05`, `08`, `11`, `14`, `15` and `16`.
 
 **`uupd.timer` updates the system automatically** at 04:00, with
 `Persistent=true`, so it catches up on missed runs. If you are testing anything
@@ -202,7 +202,7 @@ monitor as having no HDR support at all. That is exactly what Hunt did here.
    configured but not yet confirmed on the real TV. System Settings → Display →
    per screen, or read `~/.config/kwinoutputconfig.json`.
 2. **The game presents through Wayland, not XWayland.** `PROTON_ENABLE_WAYLAND=1`
-   **and** `PROTON_ENABLE_HDR=1` — both, in `00-gaming-env`' `95-gaming.conf`.
+   **and** `PROTON_ENABLE_HDR=1` — both, in `00-gaming-env`' `gaming-env.conf`.
    `PROTON_ENABLE_HDR` sets `DXVK_HDR=1` internally.
 3. **Proton GE or EM, per game.** Stock Valve Proton ignores both variables
    entirely. Steam → game → Properties → Compatibility. This is the step that is
@@ -256,7 +256,7 @@ of environment variables is how a working setup becomes a broken one with no rec
 of what moved.
 
 **Do not add `ENABLE_HDR_WSI=1`, or any other variable from a forum post, to
-`95-gaming.conf` without saying so.** That file is the environment every Proton
+`gaming-env.conf` without saying so.** That file is the environment every Proton
 game inherits. An unexplained variable in it outlives whoever added it.
 
 **`PROTON_ENABLE_WAYLAND=1` has a known cost here**: it is why Hunt jumps to the
@@ -289,6 +289,17 @@ so the alarm's notification and sound both fail while the daemon still logs
 `kwin_wayland` and takes every XWayland application with it. Introspect first.
 
 **Do not restart `plasmalogin` while a session is logged in.**
+
+**Do not put the gaming environment back in `~/.config/environment.d/`.** That
+exports it into the whole desktop session — MangoHud was loading inside
+`kwin_wayland`. Steam gets it from `steam-gaming`, which every Steam launcher runs;
+see `00-gaming-env`.
+
+**Do not leave the hostname to the network, or change it under a running
+session.** KWin resolves each X11 window's hostname when the window closes, and
+blocks the whole desktop until the lookup returns. A name that stops resolving
+mid-session froze the desktop for 4 s each time a Steam tooltip closed. See
+`16-hostname`.
 
 **Do not re-enable `suspend`/`hibernate` targets** if they are masked. That is
 deliberate on the original machine; `06-displays-sleep` is the replacement.
@@ -337,7 +348,7 @@ points from a lower number to a higher one, so installing in number order always
 finds what each component needs.
 
 ```
-00-gaming-env ──> 02  (MANGOHUD=1 lives in 95-gaming.conf)
+00-gaming-env ──> 02  (MANGOHUD=1 lives in gaming-env.conf)
               ──> 03  (the debug-overlay switch lives there too)
 02-mangohud-overlay ──> 05, 08  (they add their rows to its MangoHud.conf)
 04-prerequisites ──> 05, 07, 08  (packages, kernel modules)
@@ -367,7 +378,7 @@ That is the behaviour to expect, not a bug to chase.
 | `07-fan-control` | the board's sensor chip and channel names |
 | `02-mangohud-overlay` | the GPU's PCI address |
 | `15-windows-drive` | the Windows partition's UUID, and uid 1000 |
-| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `11`, `12`, `14` | nothing — these port as-is (`14` needs the BIOS to allow wake) |
+| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `11`, `12`, `14`, `16` | nothing — these port as-is (`14` needs the BIOS to allow wake) |
 
 ## Reporting back
 

@@ -48,6 +48,7 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 | [`13-vrr`](13-vrr/) | per-game VRR for windowed games, with an Onimusha example (manual guide; no installer) | display must support VRR |
 | [`14-wake-on-lan`](14-wake-on-lan/) | magic-packet wake on the wired connection, kept across reboots | no — BIOS must allow it |
 | [`15-windows-drive`](15-windows-drive/) | the Windows partition mounted at boot at `/run/media/lee/9AD6814BD6812919` | **yes** — partition UUID |
+| [`16-hostname`](16-hostname/) | a fixed static hostname, so it cannot change mid-session — that froze the desktop whenever the mouse was over Steam | no |
 
 | File | |
 |---|---|
@@ -150,8 +151,8 @@ NN-name/
     system/...     installed under /, paths mirrored, needs sudo
 ```
 
-So `files/home/.config/environment.d/95-gaming.conf` lands at
-`~/.config/environment.d/95-gaming.conf`, and
+So `files/home/.config/gaming-env.conf` lands at
+`~/.config/gaming-env.conf`, and
 `files/system/etc/systemd/system/astral-pins.service` at
 `/etc/systemd/system/astral-pins.service`. Adding a file to a component is just
 putting it at the right place in that tree — `install.sh` walks it, nothing
@@ -164,7 +165,7 @@ belongs to the component that feeds it. See `02-mangohud-overlay`.
 ## Refreshing this directory from the live system
 
 These files are copies, not symlinks, so a change made live (editing
-`95-gaming.conf` in place, say) does not appear here until you copy it back. A
+`gaming-env.conf` in place, say) does not appear here until you copy it back. A
 change to the live `MangoHud.conf` belongs in the piece it came from, under
 `~/.config/MangoHud/bazzite-setup.d/` and then in `NN-*/files/`.
 `~/.local/bin/gaming-config-snapshot` collects the same set into a flat mirror

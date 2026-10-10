@@ -3,17 +3,32 @@
 set -euo pipefail
 . "$(dirname "$0")/../common/lib.sh"
 
-say "dlss command, environment and Steam wrapper"
-back_up "$HOME/.config/environment.d/95-gaming.conf"
-install_tree
-
-# The notes refer to ~/.config/gaming-env.conf; keep that name working.
-if [ ! -e "$HOME/.config/gaming-env.conf" ]; then
-    run ln -s environment.d/95-gaming.conf "$HOME/.config/gaming-env.conf" \
-        && ok "symlink       ~/.config/gaming-env.conf"
-else
-    skip "exists        ~/.config/gaming-env.conf"
+# The environment used to live in ~/.config/environment.d/95-gaming.conf, with
+# ~/.config/gaming-env.conf a symlink to it. environment.d exports it into the
+# whole desktop session - MangoHud ended up inside kwin_wayland - so it is now a
+# plain file that only steam-gaming reads. Undo the old layout first, or
+# install_tree would write the new file through the symlink into environment.d.
+OLD_ENV="$HOME/.config/environment.d/95-gaming.conf"
+say "move the environment out of the desktop session"
+if [ -L "$HOME/.config/gaming-env.conf" ]; then
+    run rm "$HOME/.config/gaming-env.conf" && ok "removed       symlink ~/.config/gaming-env.conf"
 fi
+if [ -e "$OLD_ENV" ]; then
+    # Kept, renamed: environment.d only reads *.conf, so this no longer exports.
+    run mv "$OLD_ENV" "$OLD_ENV.moved-bazzite-setup" \
+        && ok "moved aside   $OLD_ENV -> .moved-bazzite-setup (now ~/.config/gaming-env.conf)"
+    # The user manager read environment.d when it started. unset-environment
+    # does not touch generator-provided values (verified: exits 0, changes
+    # nothing); a daemon-reload re-runs the generator without the file. Apps
+    # already running keep the variables until you log out.
+    run systemctl --user daemon-reload || warn "could not reload the user manager"
+else
+    skip "already out   nothing in ~/.config/environment.d"
+fi
+
+say "dlss command, environment and Steam wrapper"
+back_up "$HOME/.config/gaming-env.conf"
+install_tree
 
 refresh_desktop_caches
 
@@ -30,5 +45,4 @@ if [ "${DRY_RUN:-0}" != 1 ]; then
 fi
 
 echo
-echo "  Log out and back in for environment.d to reach the session, and fully quit"
-echo "  Steam and start it again for these to reach your games."
+echo "  Fully quit Steam and start it again for these to reach your games."

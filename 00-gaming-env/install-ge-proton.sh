@@ -2,7 +2,7 @@
 # Download the newest GE-Proton into Steam's compatibilitytools.d.
 #
 # PROTON_ENABLE_WAYLAND, PROTON_ENABLE_HDR and PROTON_DLSS_UPGRADE in
-# 95-gaming.conf do nothing under stock Valve Proton, so GE has to be present.
+# gaming-env.conf do nothing under stock Valve Proton, so GE has to be present.
 # Idempotent: if the newest release is already unpacked, nothing is downloaded.
 # Older GE versions are left alone - games may be pinned to them.
 #

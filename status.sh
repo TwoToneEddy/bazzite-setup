@@ -104,9 +104,9 @@ check() {
     [ "$FILES_UNKNOWN" -gt 0 ] && unverified=" ($FILES_UNKNOWN root-only file(s) unverified - sudo -v first)"
     case "$dir" in
         00-gaming-env)
-            if grep -q '^MANGOHUD=1' "$HOME/.config/environment.d/95-gaming.conf" 2>/dev/null; then
+            if grep -q '^MANGOHUD=1' "$HOME/.config/gaming-env.conf" 2>/dev/null; then
                 detail="$(command -v dlss >/dev/null && dlss overlay status 2>/dev/null | tr -s ' ' || echo configured)"
-            else state=partial; detail="95-gaming.conf has no MANGOHUD=1"; fi ;;
+            else state=partial; detail="gaming-env.conf has no MANGOHUD=1"; fi ;;
         00-rhi)
             if [ ! -d "$HOME/RHI/.git" ]; then state=absent; detail="repo not cloned"
             elif [ ! -x "$HOME/RHI/artifacts/linux-x64/RHI.Linux" ]; then state=partial; detail="cloned but not built"
@@ -210,6 +210,13 @@ check() {
             elif grep -F 'TARGET=/run/media/lee/9AD6814BD6812919 ' /run/mount/utab 2>/dev/null | grep -q 'uhelper=udisks2'; then
                 state=partial; detail="mounted by udisks, not the unit - re-run its install.sh"
             else detail="mounted at /run/media/lee/9AD6814BD6812919"; fi ;;
+        16-hostname)
+            local want=bazzite static live
+            static=$(hostnamectl --static 2>/dev/null); live=$(hostname)
+            if [ "$static" != "$want" ]; then state=absent; detail="static hostname '${static:-<none>}', not $want"
+            elif [ "$live" != "$want" ]; then state=partial; detail="static is $want but live is '$live' - reboot"
+            elif ! timeout 1 getent ahosts "$want" >/dev/null 2>&1; then state=partial; detail="$want does not resolve within 1 s"
+            else detail="$want, static, resolves"; fi ;;
     esac
     report "$dir" "$state" "$detail$unverified"
 }

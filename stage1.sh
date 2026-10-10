@@ -25,7 +25,7 @@ printf '\n\033[1m=== stage 1 status ===\033[0m\n'
 cat <<'EOF'
 
   Still needs you:
-    - log out and back in: 95-gaming.conf and the KWin output config load at login
+    - log out and back in: the KWin output config loads at login
     - per game, Steam -> Properties -> Compatibility -> GE-Proton, or HDR is ignored
     - in a game: '/' shows the overlay, Shift_L+F1 toggles the FPS limit,
       left-click the DLSS tray icon to toggle the indicator

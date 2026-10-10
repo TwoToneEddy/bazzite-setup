@@ -19,9 +19,10 @@ override silently falls back to E.
 |---|---|
 | `~/.local/bin/dlss` | status, and the DLSS debug indicator |
 | `~/.local/share/Steam/compatibilitytools.d/GE-Proton*` | the newest GE-Proton, via `install-ge-proton.sh`; skipped if already there, older versions kept |
-| `~/.config/environment.d/95-gaming.conf` | what it writes; the whole gaming environment |
+| `~/.config/gaming-env.conf` | the whole gaming environment |
 | `~/.local/bin/steam-gaming` | Steam wrapper that applies the above |
 | `~/.config/autostart/steam.desktop` | autostarts Steam through the wrapper |
+| `~/.local/share/applications/steam.desktop` | the app-menu / taskbar Steam and `steam://` links, through the wrapper too; overrides Bazzite's own entry, which runs `bazzite-steam` directly |
 
 ## Commands
 
@@ -40,7 +41,7 @@ with **no Steam restart**. A game open at the time is skipped, because Wine
 writes its registry back over the edit on exit. Toggle again after closing it.
 The chosen state is kept in `~/.config/dlss-overlay`.
 
-It used to go through `DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS` in `95-gaming.conf`,
+It used to go through `DXVK_NVAPI_SET_NGX_DEBUG_OPTIONS` in the environment file,
 which needed Steam fully restarted to take effect. **Do not put that variable
 back**: DXVK-NVAPI writes it into the registry at every launch, overriding the
 toggle.
@@ -64,9 +65,22 @@ from an older session (systemd's user manager and dbus-broker survive logout, an
 Plasma re-imports their environment at login), or Steam was started by something
 other than `steam-gaming`, such as the app-menu entry. A reboot clears the former.
 
-`95-gaming.conf` is a `systemd` `environment.d` file, so it is also exported into
-your whole session at login — but Steam gets it through the wrapper, which reads
-the file at launch, so a change needs no relogin.
+**Steam gets the file only through the wrapper**, which reads it at launch, so a
+change needs no relogin — just a Steam restart. Every Steam launcher this
+component installs, including the right-click actions (Store, Library, …), runs
+`steam-gaming`. A Steam started some other way — `bazzite-steam` or `steam` from a
+terminal — gets none of it, and its games have no overlay and no HDR.
+
+**It used to be `~/.config/environment.d/95-gaming.conf`**, with
+`~/.config/gaming-env.conf` a symlink to it. `environment.d` exports into the
+whole desktop session at login, so `MANGOHUD=1` and the Proton switches reached
+every app — MangoHud was loading inside `kwin_wayland` itself, polling both GPUs.
+Nothing outside Steam needs them, so the file moved out and the symlink became
+the real file. `install.sh` does the move: the old file is renamed to
+`95-gaming.conf.moved-bazzite-setup` (ignored, as `environment.d` reads only
+`*.conf`), and `systemctl --user daemon-reload` drops the variables from the running
+session (`unset-environment` does not work on `environment.d` values). Apps already
+open keep them until you log out. **Do not move it back.**
 
 Also in that file, and worth knowing:
 

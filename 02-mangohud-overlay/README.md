@@ -12,7 +12,7 @@ Windows install and nothing more. It starts hidden; `/` shows it, in every game.
 | `~/.config/MangoHud/bazzite-setup.d/90-limiter.conf` | the FPS limiter, logging, the blacklist |
 | `~/.config/MangoHud/MangoHud.conf` | the overlay itself, assembled from the pieces above |
 
-`MANGOHUD=1` itself is set in `00-gaming-env`' `95-gaming.conf`, which is what
+`MANGOHUD=1` itself is set in `00-gaming-env`' `gaming-env.conf`, which is what
 puts the overlay on every Steam game. MangoHud ships with Bazzite.
 
 ## MangoHud.conf is assembled

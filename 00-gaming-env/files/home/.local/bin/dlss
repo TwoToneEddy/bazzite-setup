@@ -31,7 +31,7 @@
 #
 set -uo pipefail
 
-CONF="${HOME}/.config/environment.d/95-gaming.conf"
+CONF="${HOME}/.config/gaming-env.conf"
 STATE="${HOME}/.config/dlss-overlay"
 STEAM="${HOME}/.local/share/Steam"
 
