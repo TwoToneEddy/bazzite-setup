@@ -191,6 +191,25 @@ check() {
                     state=partial; detail="installed, but g has no GUI editor to open"
                 fi
             fi ;;
+        14-wake-on-lan)
+            local uuid dev wol
+            IFS=: read -r uuid dev < <(nmcli -t -f UUID,TYPE,DEVICE connection show --active 2>/dev/null \
+                | awk -F: '$2 == "802-3-ethernet" {print $1 ":" $3; exit}')
+            if [ -z "${uuid:-}" ]; then state=absent; detail="no active wired connection"
+            else
+                wol=$(nmcli -g 802-3-ethernet.wake-on-lan connection show uuid "$uuid" 2>/dev/null)
+                if [ "$wol" != magic ]; then state=absent; detail="$dev wake-on-lan is ${wol:-unknown}, not magic"
+                elif [ "$(cat "/sys/class/net/$dev/device/power/wakeup" 2>/dev/null)" != enabled ]; then
+                    state=partial; detail="magic saved, but $dev device wakeup not enabled - re-run its install.sh"
+                else detail="magic packet to $(cat "/sys/class/net/$dev/address") ($dev)"; fi
+            fi ;;
+        15-windows-drive)
+            local unit=run-media-lee-9AD6814BD6812919.mount
+            if ! systemctl is-enabled --quiet "$unit" 2>/dev/null; then state=partial; detail="$unit not enabled"
+            elif ! active "$unit"; then state=partial; detail="$unit not mounted - journalctl -u $unit"
+            elif grep -F 'TARGET=/run/media/lee/9AD6814BD6812919 ' /run/mount/utab 2>/dev/null | grep -q 'uhelper=udisks2'; then
+                state=partial; detail="mounted by udisks, not the unit - re-run its install.sh"
+            else detail="mounted at /run/media/lee/9AD6814BD6812919"; fi ;;
     esac
     report "$dir" "$state" "$detail$unverified"
 }

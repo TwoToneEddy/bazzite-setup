@@ -46,6 +46,8 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 | [`11-power-profile`](11-power-profile/) | the KDE power mode always on Performance, across reboots | no |
 | [`12-shell-environment`](12-shell-environment/) | bash aliases and a git-aware prompt, into `~/.bashrc.d/` | no |
 | [`13-vrr`](13-vrr/) | per-game VRR for windowed games, with an Onimusha example (manual guide; no installer) | display must support VRR |
+| [`14-wake-on-lan`](14-wake-on-lan/) | magic-packet wake on the wired connection, kept across reboots | no — BIOS must allow it |
+| [`15-windows-drive`](15-windows-drive/) | the Windows partition mounted at boot at `/run/media/lee/9AD6814BD6812919` | **yes** — partition UUID |
 
 | File | |
 |---|---|
@@ -70,11 +72,10 @@ to Balanced. This is a manual setting; the installers do not select a profile.
 
 ## Wake-on-LAN
 
-Magic-packet wake was enabled for the wired Ethernet connection on 2026-10-03.
-See [the Wake-on-LAN guide](reference/WAKE_ON_LAN.md) for the MAC address,
-commands to reproduce or disable it, and verification steps. The configuration
-is saved and applied; actual wake from sleep or shutdown remains untested.
-This is a manual setting; the installers do not configure it.
+Installed by [`14-wake-on-lan`](14-wake-on-lan/): magic-packet wake on every
+active wired connection, MAC `8c:32:23:77:1b:e8` here. The NIC reports
+`Wake-on: g`; an actual wake from shutdown is untested and depends on the BIOS
+(ErP disabled). History in [the Wake-on-LAN notes](reference/WAKE_ON_LAN.md).
 
 ## Moving to a new machine
 
@@ -110,7 +111,7 @@ edit the Plasma panel config live, or reboot.
 Only five values genuinely move between machines — the GPU's PCI address, its LACT
 id, the monitor connectors, the fan channel names and the board's sensor module.
 `preflight.sh` finds all five and `AGENTS.md` tabulates where each one lives.
-Components `00`, `03`, `06`, `09`, `10` and `12` port with no changes at all.
+Components `00`, `03`, `06`, `09`, `10`, `12` and `14` port with no changes at all.
 
 One component lives elsewhere on purpose: **nvtruehdr** is its own repository at
 <https://github.com/TwoToneEddy/nvtruehdr>, and `10-nvtruehdr/install.sh` clones

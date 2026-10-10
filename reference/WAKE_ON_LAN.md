@@ -1,5 +1,9 @@
 # Wake-on-LAN
 
+> **Superseded by [`14-wake-on-lan`](../14-wake-on-lan/)** (2026-10-10), which finds the
+> connection at run time and verifies the NIC with `ethtool`. The UUID below is from
+> the 2026-10-03 install and no longer exists; this page is kept as history.
+
 Wake-on-LAN was enabled on this machine on 2026-10-03 through its wired
 NetworkManager connection. The saved profile requests magic-packet wake and was
 reapplied to the active adapter without disconnecting it.
@@ -34,8 +38,7 @@ nmcli device reapply enp5s0
 The first command saves the setting for subsequent connection activations,
 including after reboot. The second applies it now. Both succeeded in the local
 desktop session without sudo; if NetworkManager denies permission in another
-session, run them with sudo. This is a manual setting, not part of
-`install-all.sh`.
+session, run them with sudo. Now automated by `14-wake-on-lan`.
 
 ## Verify and use
 

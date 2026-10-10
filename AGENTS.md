@@ -83,7 +83,7 @@ rpm-ostree status         # what is layered, and on which deployment
 That `/etc` behaviour is not theoretical: it is how a LACT undervolt profile
 disappeared after a reboot here, leaving a 164-byte stub with
 `current_profile: null` and no error anywhere. After any `rpm-ostree rollback` or
-`upgrade`, re-run the installers that write to `/etc` — `04`, `05`, `08` and `11`.
+`upgrade`, re-run the installers that write to `/etc` — `04`, `05`, `08`, `11`, `14` and `15`.
 
 **`uupd.timer` updates the system automatically** at 04:00, with
 `Persistent=true`, so it catches up on missed runs. If you are testing anything
@@ -324,6 +324,8 @@ Say so plainly rather than working around these.
 | Steam sign-in, and per-game Proton version | account credentials; and GE-Proton must be chosen per game |
 | the Windows source configs | `machine-profile.conf` records where the Afterburner, FanControl, DisplaySwitch and DlssOverlay originals live, if anything needs re-deriving. Not needed for a reinstall. |
 | arranging the panel | easiest by dragging icons, then recording it: see `09-taskbar` |
+| Wake-on-LAN from shutdown | BIOS: ErP disabled, wake on PCIe enabled; and a real packet sent from another device |
+| Windows Fast Startup | must be off in Windows, or `15-windows-drive` cannot mount the volume read-write |
 | the TV profile | `display-profile tv` has never been confirmed against the real TV |
 
 ---
@@ -364,7 +366,8 @@ That is the behaviour to expect, not a bug to chase.
 | `01-displays` | connector names and monitor modes |
 | `07-fan-control` | the board's sensor chip and channel names |
 | `02-mangohud-overlay` | the GPU's PCI address |
-| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `11`, `12` | nothing — these port as-is |
+| `15-windows-drive` | the Windows partition's UUID, and uid 1000 |
+| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `11`, `12`, `14` | nothing — these port as-is (`14` needs the BIOS to allow wake) |
 
 ## Reporting back
 

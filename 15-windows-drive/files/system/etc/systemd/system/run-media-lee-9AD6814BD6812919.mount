@@ -1,0 +1,19 @@
+# The Windows system partition (nvme1n1p3), mounted at boot at the same path
+# Dolphin's automount used, so anything that already points there keeps working.
+# Installed by bazzite-setup/15-windows-drive. The unit name must match Where=.
+[Unit]
+Description=Windows drive (NTFS) at /run/media/lee/9AD6814BD6812919
+Documentation=file:///var/home/lee/bazzite-setup/15-windows-drive/README.md
+
+[Mount]
+What=/dev/disk/by-uuid/9AD6814BD6812919
+Where=/run/media/lee/9AD6814BD6812919
+Type=ntfs-3g
+# uid/gid 1000 = lee. windows_names refuses filenames Windows cannot open.
+Options=rw,nosuid,nodev,uid=1000,gid=1000,umask=022,windows_names,x-systemd.device-timeout=10s
+TimeoutSec=30
+
+[Install]
+# WantedBy, not RequiredBy: if Windows left the volume hibernated (Fast Startup)
+# ntfs-3g refuses to mount it, and that must not hold up boot.
+WantedBy=local-fs.target

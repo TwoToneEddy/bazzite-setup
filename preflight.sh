@@ -158,6 +158,12 @@ fi
 hdr "external sources"
 [ -d "$WIN_MOUNT" ] && same "the Windows install is mounted at $WIN_MOUNT" \
     || note "Windows install not mounted - only needed to re-derive curves and layouts"
+if [ -e "/dev/disk/by-uuid/$WIN_UUID" ]; then
+    same "Windows partition $WIN_UUID present"
+else
+    diff_ "no partition with UUID $WIN_UUID"
+    fix "15-windows-drive/files/system/etc/systemd/system/*.mount and its install.sh (lsblk -f), or skip 15"
+fi
 if [ -d "$HOME/nvtruehdr/.git" ]; then
     same "nvtruehdr repo present at ~/nvtruehdr"
 else
