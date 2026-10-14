@@ -217,6 +217,10 @@ check() {
             elif [ "$live" != "$want" ]; then state=partial; detail="static is $want but live is '$live' - reboot"
             elif ! timeout 1 getent ahosts "$want" >/dev/null 2>&1; then state=partial; detail="$want does not resolve within 1 s"
             else detail="$want, static, resolves"; fi ;;
+        17-add-to-steam)
+            if ! command -v steamos-add-to-steam >/dev/null; then state=partial; detail="no steamos-add-to-steam - the menu entry cannot work"
+            elif [ ! -x "$HOME/.local/share/kio/servicemenus/add-to-steam.desktop" ]; then state=partial; detail="service menu not executable - Plasma ignores it"
+            else detail="Dolphin menu -> steamos-add-to-steam"; fi ;;
     esac
     report "$dir" "$state" "$detail$unverified"
 }

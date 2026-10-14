@@ -379,7 +379,7 @@ That is the behaviour to expect, not a bug to chase.
 | `07-fan-control` | the board's sensor chip and channel names |
 | `02-mangohud-overlay` | the GPU's PCI address |
 | `15-windows-drive` | the Windows partition's UUID, and uid 1000 |
-| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `11`, `12`, `14`, `16` | nothing — these port as-is (`14` needs the BIOS to allow wake) |
+| `00-gaming-env`, `00-rhi`, `03`, `06`, `09`, `10`, `11`, `12`, `14`, `16`, `17` | nothing — these port as-is (`14` needs the BIOS to allow wake) |
 
 ## Reporting back
 

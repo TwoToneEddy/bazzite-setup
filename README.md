@@ -49,6 +49,7 @@ basics, with nothing layered and no reboot; everything from `04` on is stage 2.
 | [`14-wake-on-lan`](14-wake-on-lan/) | magic-packet wake on the wired connection, kept across reboots | no — BIOS must allow it |
 | [`15-windows-drive`](15-windows-drive/) | the Windows partition mounted at boot at `/run/media/lee/9AD6814BD6812919` | **yes** — partition UUID |
 | [`16-hostname`](16-hostname/) | a fixed static hostname, so it cannot change mid-session — that froze the desktop whenever the mouse was over Steam | no |
+| [`17-add-to-steam`](17-add-to-steam/) | an **Add to Steam** entry on Dolphin's right-click menu for `.exe` files and other launchers | no |
 
 | File | |
 |---|---|
