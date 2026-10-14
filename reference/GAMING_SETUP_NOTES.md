@@ -926,6 +926,106 @@ Things to know for any of them:
 
 ---
 
+## DX11 through Proton — Superposition benchmark (12 Oct 2026)
+
+The question was whether software (driver, Proton, DXVK/VKD3D) could get more
+out of the 5090 without touching voltage or clocks. **Nothing on the system was
+changed.** Each test set an environment variable for one benchmark run and
+nothing more. The only thing left behind is `~/Benchmarks` (8.3 GB: the benchmark,
+test prefixes, two DXVK releases, scripts and logs), which is safe to delete.
+
+### How it was run
+
+* `~/Downloads/Unigine_Superposition-1.1.run` is the **Linux** build, which is
+  OpenGL only. For DirectX the official Windows build was downloaded from
+  Unigine and run under Proton. Superposition has **no DX12 mode**, so this tests
+  DX11, meaning DXVK. VKD3D-Proton never loads.
+* Proton was started inside Steam Linux Runtime 4, the same way Steam starts it
+  (`~/Benchmarks/scripts/proton-run.sh`), with a separate test prefix per Proton
+  build under `~/Benchmarks/prefixes/`. **It did not go through `steam-gaming`**,
+  so `gaming-env.conf` did not apply: no MangoHud, no Wayland, no HDR.
+* The CLI is Pro-only, so `superposition.exe` was called directly with the
+  launcher's own arguments. The score lands in
+  `<prefix>/pfx/drive_c/users/steamuser/Superposition/automation/log-*.txt`.
+* **1080p Extreme, exclusive fullscreen.** Windowed runs abort with
+  "Benchmark stopped" after about a second because the window never gets focus.
+  Fullscreen runs complete. F12 does nothing in benchmark mode, and `spectacle`
+  only returns blank images from a script, so **no frames were captured**.
+* LACT profile `UV1` was active throughout. The GPU sat at **99% load, about
+  2820 MHz (the UV1 cap) and about 460 W** in every run, so this benchmark is
+  completely GPU-bound.
+
+Rerun with:
+
+```bash
+~/Benchmarks/scripts/bench2.sh <label> "$HOME/.local/share/Steam/steamapps/common/Proton - Experimental"
+# DXVK_CONFIG=..., BIN=bin-dxvk2.7.1 WINEDLLOVERRIDES="d3d11,dxgi=n", etc. as env vars
+# results append to ~/Benchmarks/results/summary.txt
+```
+
+### Results
+
+Driver 615.71.09, kernel 7.2.8-ogc5.1. Run-to-run noise is about ±0.5%.
+
+| Change | Score | vs baseline |
+|---|---|---|
+| Proton Experimental (DXVK 3.1.1-47), defaults: 4 runs, 26385 / 26600 / 26410 / 26426 | **~26450** | — |
+| Proton Hotfix (DXVK 3.1.1-66) | 26400 | same |
+| GE-Proton11-7 (DXVK 3.1-19), the newest GE | 26474 | same |
+| DXVK 3.1.1 release as a native override | 26248 | same |
+| DXVK 2.7.1 as a native override | 26316 | same |
+| `d3d11.relaxedBarriers = True` | 26337 | same |
+| `dxvk.enableDescriptorHeap = False` (falls back to descriptor buffer): 26755 / 26751 | ~26750 | +1.1% |
+| **heap and descriptor buffer both off ("Binding model: Legacy"): 27748 / 27251 / 27085** | **~27360** | **+3.4%** |
+| `PROTON_ENABLE_WAYLAND=1` | rendered about 40 s, then stalled | — |
+
+### What it means
+
+**The Proton build and DXVK version make no difference here.** A GPU-bound
+DX11 load does not care which one translates it.
+
+**The one real gain is DXVK's binding model.** DXVK 3.x picks
+`VK_EXT_descriptor_heap` on this driver ("Binding model: Descriptor heap" in the
+DXVK log). Forcing the older descriptor-set path was faster in all three runs.
+To use it per game, add this to the Steam launch options:
+
+```
+DXVK_CONFIG="dxvk.enableDescriptorHeap = False; dxvk.enableDescriptorBuffer = False" %command%
+```
+
+It affects only D3D8–11 games, not DX12 (VKD3D). It works with any Proton build,
+including GE, and does not interact with `PROTON_ENABLE_HDR`/`DXVK_HDR`.
+**Deliberately not added to `gaming-env.conf`**, for two reasons:
+
+* **Unchecked visually.** No frames were captured. It changes how descriptors
+  reach the GPU, not any quality setting, so artifacts are unlikely. Still,
+  watch one run before trusting it.
+* **CPU-bound games untested.** Descriptor heaps exist to cut CPU overhead, so
+  the legacy path may lose where the CPU is the limit. A 1080p Medium
+  comparison was started and abandoned unfinished.
+
+**`PROTON_ENABLE_WAYLAND=1` stalled Superposition.** It was seen only with this
+benchmark, so it says nothing about the games that use it via
+`gaming-env.conf`. Recorded in case a DX11 game hangs the same way.
+
+### Noticed along the way, not acted on
+
+* **Driver 615.78.08 and kernel 7.2.9 are already staged** (deployment
+  44.20261012, pulled by `uupd`). They apply at the next reboot and were not
+  tested. Rerun the baseline after it to see whether the driver changes anything.
+* **The 5090's root port is PCIe Gen4** (`00:01.1`, max 16 GT/s), so the card
+  links at Gen4 x16, not Gen5. That is either a BIOS slot-speed setting or a
+  limit of this B850M. Check the BIOS. Expect 1–2% at most.
+* **Resizable BAR is on** (32 GB BAR1), and all three monitors hang off the
+  5090, so there is no PRIME copy through the iGPU.
+* **The power mode was Balanced, not Performance.** `/etc/tuned/ppd_base_profile`
+  read `balanced` (last written 17:18 that day, before this session started), and
+  `ppd.conf` still has `default=balanced`. So `11-power-profile` was not in effect.
+  The cause wasn't investigated. It cannot have mattered to these GPU-bound
+  numbers, but re-run `11-power-profile/install.sh` if Performance is still wanted.
+
+---
+
 ## Still open
 
 ### TV Mode — 4K120
