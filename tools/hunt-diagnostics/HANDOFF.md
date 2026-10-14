@@ -1,5 +1,24 @@
 # Resume here: multiplayer freezes
 
+## RESOLVED — 14 October 2026 (user report)
+
+The user reports the freezes are fixed by two changes, made together:
+
+1. **Steam → Settings → Interface → turn off "GPU accelerated rendering in web views".**
+   This is a Steam client GUI setting, so no installer in this repo sets it. It must be
+   set by hand on every new install or Steam reset.
+2. **A fixed static hostname, `bazzite`.** Before, the router's DHCP/DNS was renaming the
+   machine during the session. Component `16-hostname` sets this (`sudo hostnamectl hostname bazzite`).
+   That README covers the same mechanism behind the Steam desktop freeze: KWin blocks on a
+   hostname lookup that can no longer resolve.
+
+These were not tested separately, so the repo cannot say which of the two did the work.
+Keep both. If the freezes return, check both first: confirm the Steam setting is still
+off, and that `hostnamectl --static` and `hostname` both print `bazzite`. Only after that
+re-open the investigation below.
+
+---
+
 Last update: 3 October 2026. User wants to resume simply by asking about the freeze investigation; read this and REPORT.md before work.
 
 ## Latest outcome

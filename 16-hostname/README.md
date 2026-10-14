@@ -60,6 +60,14 @@ A static hostname takes priority over NetworkManager's transient one, so the nam
 stays fixed from boot to shutdown and always resolves instantly through
 `nss-myhostname`.
 
+## Also: the Hunt / ARC Raiders freezes (2026-10-14)
+
+Together with turning off Steam's *GPU accelerated rendering in web views*
+(Settings → Interface), the user reports this fixed the ~5 s in-game freezes in
+Hunt: Showdown and ARC Raiders that `tools/hunt-diagnostics/` was investigating.
+Before, the router's DHCP was naming the machine. The two changes were not tested
+separately.
+
 ## Verify
 
 ```bash

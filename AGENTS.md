@@ -333,6 +333,7 @@ Say so plainly rather than working around these.
 | the CoolerControl password | if one was set in its GUI, only a hash is stored. `CC_PASSWORD='...' ./install.sh` |
 | validating the undervolt | needs sustained real load and someone watching for instability |
 | Steam sign-in, and per-game Proton version | account credentials; and GE-Proton must be chosen per game |
+| Steam → Settings → Interface → GPU accelerated rendering in web views **off** | a Steam client GUI setting. With it on, Hunt and ARC Raiders froze for ~5 s at a time (see the Hunt section below) |
 | the Windows source configs | `machine-profile.conf` records where the Afterburner, FanControl, DisplaySwitch and DlssOverlay originals live, if anything needs re-deriving. Not needed for a reinstall. |
 | arranging the panel | easiest by dragging icons, then recording it: see `09-taskbar` |
 | Wake-on-LAN from shutdown | BIOS: ErP disabled, wake on PCIe enabled; and a real packet sent from another device |
@@ -389,6 +390,12 @@ summarising it. Do not describe a component as working because its installer
 succeeded.
 
 ## Hunt / ARC Raiders freeze investigation
+
+**Resolved, 14 October 2026 (user report).** Two changes fixed the multiplayer freezes:
+Steam → Settings → Interface → **GPU accelerated rendering in web views off**, and a
+static hostname `bazzite` (`16-hostname`) instead of the one the router's DHCP assigned.
+They were not tested separately, so keep both. If the freezes come back, check both before
+anything else.
 
 For this investigation, start with `tools/hunt-diagnostics/HANDOFF.md`, then
 `REPORT.md` and `NEXT-TEST.md` in that directory. Capture data is local and

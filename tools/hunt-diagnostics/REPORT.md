@@ -1,5 +1,7 @@
 # Hunt freeze investigation — 2 October 2026
 
+> **Resolved 14 October 2026 (user report):** Steam → Settings → Interface → GPU accelerated rendering in web views **off**, plus a static hostname `bazzite` (`16-hostname`). See HANDOFF.md. The analysis below is kept as history.
+
 Recordings stopped at 20:29 local time. Detailed sampling covers 20:02:15–20:29:17 (1,623 samples); earlier GPU/system recordings are also retained.
 
 ## Finding
